@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/oficina.db
+      - JWT_SECRET=dev-secret-key-change-in-production
+      - APP_ENV=development
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=oficina
+      - POSTGRES_USER=oficina
+      - POSTGRES_PASSWORD=oficina123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    profiles:
+      - postgres
+
+volumes:
+  pgdata:
