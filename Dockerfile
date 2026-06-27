@@ -1,6 +1,6 @@
 FROM python:3.12-slim AS builder
 
-ENV POETRY_VERSION=1.8.4 \
+ENV POETRY_VERSION=2.3.2 \
     POETRY_HOME=/opt/poetry \
     POETRY_VIRTUALENVS_CREATE=false \
     POETRY_NO_INTERACTION=1
@@ -10,12 +10,9 @@ RUN pip install "poetry==$POETRY_VERSION"
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
-
-RUN poetry install --no-dev --no-root
-
 COPY src/ ./src/
 
-RUN poetry install --no-dev --no-root
+RUN poetry install --no-root
 
 FROM python:3.12-slim AS runtime
 
