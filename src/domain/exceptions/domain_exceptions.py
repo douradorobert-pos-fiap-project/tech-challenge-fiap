@@ -29,12 +29,16 @@ class DinheiroNegativoError(DomainException):
 
 class EstoqueInsuficienteError(DomainException):
     def __init__(self, peca_nome: str, solicitado: int, disponivel: int) -> None:
-        super().__init__(f"Estoque insuficiente para {peca_nome}: solicitado={solicitado}, disponivel={disponivel}")
+        super().__init__(
+            f"Estoque insuficiente para {peca_nome}: solicitado={solicitado}, disponivel={disponivel}"
+        )
 
 
 class TransicaoStatusInvalidaError(DomainException):
     def __init__(self, status_atual: str, novo_status: str) -> None:
-        super().__init__(f"Transicao de status invalida: {status_atual} -> {novo_status}")
+        super().__init__(
+            f"Transicao de status invalida: {status_atual} -> {novo_status}"
+        )
 
 
 class OrdemServicoNaoEncontradaError(DomainException):

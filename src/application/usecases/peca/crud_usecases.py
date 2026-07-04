@@ -69,7 +69,9 @@ class UpdatePecaUseCase:
         if peca is None:
             raise PecaNaoEncontradaError(str(peca_id))
         preco = Dinheiro(dto.preco) if dto.preco is not None else None
-        peca.atualizar_dados(nome=dto.nome, preco=preco, estoque_minimo=dto.estoque_minimo)
+        peca.atualizar_dados(
+            nome=dto.nome, preco=preco, estoque_minimo=dto.estoque_minimo
+        )
         saved = self._repository.save(peca)
         return CreatePecaUseCase._to_response(saved)
 

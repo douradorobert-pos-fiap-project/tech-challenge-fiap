@@ -7,11 +7,19 @@ from src.application.dtos.ordem_servico_dtos import (
     OrcamentoResponseDTO,
     OrdemServicoResponseDTO,
 )
-from src.application.ports.repositories.cliente_repository_port import ClienteRepositoryPort
-from src.application.ports.repositories.ordem_servico_repository_port import OrdemServicoRepositoryPort
+from src.application.ports.repositories.cliente_repository_port import (
+    ClienteRepositoryPort,
+)
+from src.application.ports.repositories.ordem_servico_repository_port import (
+    OrdemServicoRepositoryPort,
+)
 from src.application.ports.repositories.peca_repository_port import PecaRepositoryPort
-from src.application.ports.repositories.servico_repository_port import ServicoRepositoryPort
-from src.application.ports.repositories.veiculo_repository_port import VeiculoRepositoryPort
+from src.application.ports.repositories.servico_repository_port import (
+    ServicoRepositoryPort,
+)
+from src.application.ports.repositories.veiculo_repository_port import (
+    VeiculoRepositoryPort,
+)
 from src.domain.entities.ordem_servico import OrdemServico
 from src.domain.exceptions.domain_exceptions import (
     ClienteNaoEncontradoError,

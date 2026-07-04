@@ -1,7 +1,7 @@
 import pytest
 
-from src.domain.entities.ordem_servico import OrdemServico
 from src.domain.entities.orcamento import Orcamento
+from src.domain.entities.ordem_servico import OrdemServico
 from src.domain.exceptions.domain_exceptions import (
     OrcamentoJaAprovadoError,
     OrcamentoJaRecusadoError,

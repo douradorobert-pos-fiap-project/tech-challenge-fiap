@@ -11,7 +11,6 @@ from src.domain.exceptions.domain_exceptions import (
 )
 from src.domain.value_objects.status_os import StatusOS
 
-
 _TRANSICOES_VALIDAS: dict[StatusOS, set[StatusOS]] = {
     StatusOS.RECEBIDA: {StatusOS.DIAGNOSTICO, StatusOS.CANCELADA},
     StatusOS.DIAGNOSTICO: {StatusOS.AGUARDANDO_APROVACAO, StatusOS.CANCELADA},

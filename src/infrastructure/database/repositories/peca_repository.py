@@ -44,11 +44,7 @@ class SqlAlchemyPecaRepository(PecaRepositoryPort):
         return self._to_entity(model)
 
     def get_by_sku(self, sku: str) -> Peca | None:
-        model = (
-            self._session.query(PecaModel)
-            .filter(PecaModel.sku == sku)
-            .first()
-        )
+        model = self._session.query(PecaModel).filter(PecaModel.sku == sku).first()
         if model is None:
             return None
         return self._to_entity(model)

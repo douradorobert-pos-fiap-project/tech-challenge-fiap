@@ -1,9 +1,9 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-from src.api.dependencies import CurrentUserDep, VeiculoRepoDep, ClienteRepoDep
+from src.api.dependencies import ClienteRepoDep, CurrentUserDep, VeiculoRepoDep
 from src.application.dtos.veiculo_dtos import CreateVeiculoDTO, UpdateVeiculoDTO
 from src.application.usecases.veiculo.crud_usecases import (
     CreateVeiculoUseCase,

@@ -1,9 +1,6 @@
-import uuid
-
 import pytest
 
 from src.domain.entities.cliente import Cliente
-from src.domain.exceptions.domain_exceptions import EmailInvalidoError
 from src.domain.value_objects.cpf_cnpj import CpfCnpj
 from src.domain.value_objects.email import Email
 

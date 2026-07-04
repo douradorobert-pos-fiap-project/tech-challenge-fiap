@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
 
 from src.api.dependencies import ClienteRepoDep, CurrentUserDep
@@ -13,9 +13,9 @@ from src.application.usecases.cliente.crud_usecases import (
     UpdateClienteUseCase,
 )
 from src.domain.exceptions.domain_exceptions import (
-    CPFInvalidoError,
-    CNPJInvalidoError,
     ClienteNaoEncontradoError,
+    CNPJInvalidoError,
+    CPFInvalidoError,
     EmailInvalidoError,
 )
 

@@ -5,7 +5,9 @@ from src.application.dtos.cliente_dtos import (
     CreateClienteDTO,
     UpdateClienteDTO,
 )
-from src.application.ports.repositories.cliente_repository_port import ClienteRepositoryPort
+from src.application.ports.repositories.cliente_repository_port import (
+    ClienteRepositoryPort,
+)
 from src.domain.entities.cliente import Cliente
 from src.domain.exceptions.domain_exceptions import ClienteNaoEncontradoError
 from src.domain.value_objects.cpf_cnpj import CpfCnpj
@@ -62,7 +64,9 @@ class UpdateClienteUseCase:
     def __init__(self, repository: ClienteRepositoryPort) -> None:
         self._repository = repository
 
-    def execute(self, cliente_id: uuid.UUID, dto: UpdateClienteDTO) -> ClienteResponseDTO:
+    def execute(
+        self, cliente_id: uuid.UUID, dto: UpdateClienteDTO
+    ) -> ClienteResponseDTO:
         cliente = self._repository.get_by_id(cliente_id)
         if cliente is None:
             raise ClienteNaoEncontradoError(str(cliente_id))

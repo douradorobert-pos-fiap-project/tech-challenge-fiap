@@ -2,7 +2,9 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from src.application.ports.repositories.cliente_repository_port import ClienteRepositoryPort
+from src.application.ports.repositories.cliente_repository_port import (
+    ClienteRepositoryPort,
+)
 from src.domain.entities.cliente import Cliente
 from src.domain.value_objects.cpf_cnpj import CpfCnpj
 from src.domain.value_objects.email import Email

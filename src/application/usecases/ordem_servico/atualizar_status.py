@@ -4,11 +4,13 @@ from src.application.dtos.ordem_servico_dtos import (
     AtualizarStatusDTO,
     OrdemServicoResponseDTO,
 )
-from src.application.ports.repositories.ordem_servico_repository_port import OrdemServicoRepositoryPort
 from src.application.ports.external.email_port import EmailPort
+from src.application.ports.repositories.ordem_servico_repository_port import (
+    OrdemServicoRepositoryPort,
+)
+from src.application.usecases.ordem_servico.abrir_os import AbrirOsUseCase
 from src.domain.exceptions.domain_exceptions import OrdemServicoNaoEncontradaError
 from src.domain.value_objects.status_os import StatusOS
-from src.application.usecases.ordem_servico.abrir_os import AbrirOsUseCase
 
 
 class AtualizarStatusOsUseCase:
@@ -20,7 +22,9 @@ class AtualizarStatusOsUseCase:
         self._repository = repository
         self._email_port = email_port
 
-    def execute(self, os_id: uuid.UUID, dto: AtualizarStatusDTO) -> OrdemServicoResponseDTO:
+    def execute(
+        self, os_id: uuid.UUID, dto: AtualizarStatusDTO
+    ) -> OrdemServicoResponseDTO:
         ordem = self._repository.get_by_id(os_id)
         if ordem is None:
             raise OrdemServicoNaoEncontradaError(str(os_id))

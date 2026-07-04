@@ -3,7 +3,9 @@ import uuid
 import pytest
 
 from src.application.dtos.cliente_dtos import CreateClienteDTO, UpdateClienteDTO
-from src.application.ports.repositories.cliente_repository_port import ClienteRepositoryPort
+from src.application.ports.repositories.cliente_repository_port import (
+    ClienteRepositoryPort,
+)
 from src.application.usecases.cliente.crud_usecases import (
     CreateClienteUseCase,
     DeleteClienteUseCase,
@@ -13,8 +15,6 @@ from src.application.usecases.cliente.crud_usecases import (
 )
 from src.domain.entities.cliente import Cliente
 from src.domain.exceptions.domain_exceptions import ClienteNaoEncontradoError
-from src.domain.value_objects.cpf_cnpj import CpfCnpj
-from src.domain.value_objects.email import Email
 
 
 class FakeClienteRepository(ClienteRepositoryPort):
@@ -110,10 +110,17 @@ class TestListClientesUseCase:
         repo = FakeClienteRepository()
         create_uc = CreateClienteUseCase(repo)
         create_uc.execute(
-            CreateClienteDTO(nome="Joao", cpf_cnpj="52998224725", email="joao@ex.com", telefone="111")
+            CreateClienteDTO(
+                nome="Joao", cpf_cnpj="52998224725", email="joao@ex.com", telefone="111"
+            )
         )
         create_uc.execute(
-            CreateClienteDTO(nome="Maria", cpf_cnpj="11144477735", email="maria@ex.com", telefone="222")
+            CreateClienteDTO(
+                nome="Maria",
+                cpf_cnpj="11144477735",
+                email="maria@ex.com",
+                telefone="222",
+            )
         )
 
         list_uc = ListClientesUseCase(repo)
@@ -132,7 +139,9 @@ class TestUpdateClienteUseCase:
         repo = FakeClienteRepository()
         create_uc = CreateClienteUseCase(repo)
         created = create_uc.execute(
-            CreateClienteDTO(nome="Joao", cpf_cnpj="52998224725", email="joao@ex.com", telefone="111")
+            CreateClienteDTO(
+                nome="Joao", cpf_cnpj="52998224725", email="joao@ex.com", telefone="111"
+            )
         )
 
         update_uc = UpdateClienteUseCase(repo)
@@ -153,7 +162,9 @@ class TestDeleteClienteUseCase:
         repo = FakeClienteRepository()
         create_uc = CreateClienteUseCase(repo)
         created = create_uc.execute(
-            CreateClienteDTO(nome="Joao", cpf_cnpj="52998224725", email="joao@ex.com", telefone="111")
+            CreateClienteDTO(
+                nome="Joao", cpf_cnpj="52998224725", email="joao@ex.com", telefone="111"
+            )
         )
 
         delete_uc = DeleteClienteUseCase(repo)

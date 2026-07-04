@@ -6,19 +6,19 @@ from sqlalchemy.pool import StaticPool
 
 from src.api.dependencies import get_session
 from src.api.main import app
-from src.infrastructure.database.base import Base
 from src.infrastructure.auth.jwt_handler import create_access_token
+from src.infrastructure.database.base import Base
 
 # Import all models so Base.metadata knows about them
 from src.infrastructure.database.models.cliente_model import ClienteModel  # noqa: F401
-from src.infrastructure.database.models.veiculo_model import VeiculoModel  # noqa: F401
-from src.infrastructure.database.models.servico_model import ServicoModel  # noqa: F401
-from src.infrastructure.database.models.peca_model import PecaModel  # noqa: F401
 from src.infrastructure.database.models.ordem_servico_model import (  # noqa: F401
     ItemPecaModel,
     ItemServicoModel,
     OrdemServicoModel,
 )
+from src.infrastructure.database.models.peca_model import PecaModel  # noqa: F401
+from src.infrastructure.database.models.servico_model import ServicoModel  # noqa: F401
+from src.infrastructure.database.models.veiculo_model import VeiculoModel  # noqa: F401
 
 
 @pytest.fixture
@@ -35,7 +35,9 @@ def test_engine():
 
 @pytest.fixture
 def test_session(test_engine):
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+    TestingSessionLocal = sessionmaker(
+        autocommit=False, autoflush=False, bind=test_engine
+    )
     session = TestingSessionLocal()
     yield session
     session.close()

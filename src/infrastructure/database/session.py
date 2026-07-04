@@ -16,7 +16,9 @@ def _ensure_sqlite_dir() -> None:
 
 _ensure_sqlite_dir()
 
-connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+connect_args = (
+    {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+)
 
 engine = create_engine(settings.DATABASE_URL, connect_args=connect_args, echo=False)
 

@@ -5,7 +5,9 @@ from src.application.dtos.servico_dtos import (
     ServicoResponseDTO,
     UpdateServicoDTO,
 )
-from src.application.ports.repositories.servico_repository_port import ServicoRepositoryPort
+from src.application.ports.repositories.servico_repository_port import (
+    ServicoRepositoryPort,
+)
 from src.domain.entities.servico import Servico
 from src.domain.exceptions.domain_exceptions import ServicoNaoEncontradoError
 from src.domain.value_objects.dinheiro import Dinheiro
@@ -59,12 +61,16 @@ class UpdateServicoUseCase:
     def __init__(self, repository: ServicoRepositoryPort) -> None:
         self._repository = repository
 
-    def execute(self, servico_id: uuid.UUID, dto: UpdateServicoDTO) -> ServicoResponseDTO:
+    def execute(
+        self, servico_id: uuid.UUID, dto: UpdateServicoDTO
+    ) -> ServicoResponseDTO:
         servico = self._repository.get_by_id(servico_id)
         if servico is None:
             raise ServicoNaoEncontradoError(str(servico_id))
         preco = Dinheiro(dto.preco_base) if dto.preco_base is not None else None
-        servico.atualizar_dados(nome=dto.nome, descricao=dto.descricao, preco_base=preco)
+        servico.atualizar_dados(
+            nome=dto.nome, descricao=dto.descricao, preco_base=preco
+        )
         saved = self._repository.save(servico)
         return CreateServicoUseCase._to_response(saved)
 
