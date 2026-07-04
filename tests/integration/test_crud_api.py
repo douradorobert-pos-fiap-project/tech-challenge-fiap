@@ -1,6 +1,3 @@
-import uuid
-
-
 class TestVeiculoApi:
     def _criar_cliente(self, client, auth_headers) -> str:
         response = client.post(
@@ -68,7 +65,11 @@ class TestServicoApi:
     def test_criar_servico(self, client, auth_headers) -> None:
         response = client.post(
             "/api/v1/servicos",
-            json={"nome": "Troca de Oleo", "descricao": "Troca de oleo e filtro", "preco_base": 80.00},
+            json={
+                "nome": "Troca de Oleo",
+                "descricao": "Troca de oleo e filtro",
+                "preco_base": 80.00,
+            },
             headers=auth_headers,
         )
         assert response.status_code == 201

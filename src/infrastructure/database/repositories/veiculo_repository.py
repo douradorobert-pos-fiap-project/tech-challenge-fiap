@@ -2,7 +2,9 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from src.application.ports.repositories.veiculo_repository_port import VeiculoRepositoryPort
+from src.application.ports.repositories.veiculo_repository_port import (
+    VeiculoRepositoryPort,
+)
 from src.domain.entities.veiculo import Veiculo
 from src.domain.value_objects.placa import Placa
 from src.infrastructure.database.models.veiculo_model import VeiculoModel

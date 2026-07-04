@@ -34,7 +34,11 @@ class TestOrdemServicoApi:
 
         servico2 = client.post(
             "/api/v1/servicos",
-            json={"nome": "Alinhamento", "descricao": "Alinhamento", "preco_base": 120.00},
+            json={
+                "nome": "Alinhamento",
+                "descricao": "Alinhamento",
+                "preco_base": 120.00,
+            },
             headers=auth_headers,
         ).json()
 
@@ -188,7 +192,7 @@ class TestOrdemServicoApi:
             headers=auth_headers,
         ).json()
 
-        os2 = client.post(
+        client.post(
             "/api/v1/ordens-servico",
             json={
                 "cliente_id": dados["cliente_id"],
@@ -252,7 +256,9 @@ class TestOrdemServicoApi:
             headers=auth_headers,
         ).json()
 
-        response = client.get(f"/api/v1/ordens-servico/{os['id']}", headers=auth_headers)
+        response = client.get(
+            f"/api/v1/ordens-servico/{os['id']}", headers=auth_headers
+        )
         assert response.status_code == 200
         assert response.json()["orcamento"]["total"] == 156.50  # 80 + 25.50*3=76.50
 

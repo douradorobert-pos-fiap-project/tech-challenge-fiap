@@ -31,6 +31,12 @@ pytest-mock = ">=3.12.0,<4.0.0"
 httpx = ">=0.27.0,<0.28.0"
 ruff = ">=0.5.0,<0.6.0"
 
+[tool.poetry.group.test.dependencies]
+isort = "5.13.2"
+black = "24.3.0"
+flake8 = "7.0.0"
+pre-commit = "3.8.0"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -65,3 +71,29 @@ dev = [
     "httpx (>=0.28.1,<0.29.0)",
     "ruff (>=0.15.18,<0.16.0)"
 ]
+
+[tool.flake8]
+select = ['B', 'C', 'E', 'F', 'W', 'T4', 'B9']
+ignore = ['E202','E203', 'E266', 'E501', 'W503', 'F403', 'E712', 'E226', 'E722', 'W605', 'F405', 'E721', 'E704', 'E402']
+max-line-length = 88
+max-complexity = 37
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 88
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''

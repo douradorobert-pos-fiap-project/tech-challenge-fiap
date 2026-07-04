@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from src.api.dependencies import CurrentUserDep, PecaRepoDep
@@ -126,7 +126,9 @@ def ajustar_estoque(
 ) -> PecaResponse:
     try:
         use_case = AjustarEstoqueUseCase(repo)
-        result = use_case.execute(peca_id, AjustarEstoqueDTO(nova_quantidade=req.nova_quantidade))
+        result = use_case.execute(
+            peca_id, AjustarEstoqueDTO(nova_quantidade=req.nova_quantidade)
+        )
         return PecaResponse(**result.__dict__)
     except PecaNaoEncontradaError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

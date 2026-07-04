@@ -5,8 +5,12 @@ from src.application.dtos.veiculo_dtos import (
     UpdateVeiculoDTO,
     VeiculoResponseDTO,
 )
-from src.application.ports.repositories.cliente_repository_port import ClienteRepositoryPort
-from src.application.ports.repositories.veiculo_repository_port import VeiculoRepositoryPort
+from src.application.ports.repositories.cliente_repository_port import (
+    ClienteRepositoryPort,
+)
+from src.application.ports.repositories.veiculo_repository_port import (
+    VeiculoRepositoryPort,
+)
 from src.domain.entities.veiculo import Veiculo
 from src.domain.exceptions.domain_exceptions import (
     ClienteNaoEncontradoError,
@@ -76,7 +80,9 @@ class UpdateVeiculoUseCase:
     def __init__(self, repository: VeiculoRepositoryPort) -> None:
         self._repository = repository
 
-    def execute(self, veiculo_id: uuid.UUID, dto: UpdateVeiculoDTO) -> VeiculoResponseDTO:
+    def execute(
+        self, veiculo_id: uuid.UUID, dto: UpdateVeiculoDTO
+    ) -> VeiculoResponseDTO:
         veiculo = self._repository.get_by_id(veiculo_id)
         if veiculo is None:
             raise VeiculoNaoEncontradoError(str(veiculo_id))

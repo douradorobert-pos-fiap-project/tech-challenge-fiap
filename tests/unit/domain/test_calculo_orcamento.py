@@ -1,7 +1,6 @@
 import uuid
 from decimal import Decimal
 
-from src.domain.entities.item import ItemPeca, ItemServico
 from src.domain.entities.ordem_servico import OrdemServico
 from src.domain.entities.peca import Peca
 from src.domain.entities.servico import Servico
@@ -12,14 +11,32 @@ from src.domain.value_objects.dinheiro import Dinheiro
 class TestCalculoOrcamentoService:
     def _criar_servicos(self) -> list[Servico]:
         return [
-            Servico(nome="Troca de Oleo", descricao="Troca de oleo e filtro", preco_base=Dinheiro(80)),
-            Servico(nome="Alinhamento", descricao="Alinhamento e balanceamento", preco_base=Dinheiro(120)),
+            Servico(
+                nome="Troca de Oleo",
+                descricao="Troca de oleo e filtro",
+                preco_base=Dinheiro(80),
+            ),
+            Servico(
+                nome="Alinhamento",
+                descricao="Alinhamento e balanceamento",
+                preco_base=Dinheiro(120),
+            ),
         ]
 
     def _criar_pecas(self) -> list[Peca]:
         return [
-            Peca(nome="Filtro de Oleo", sku="FO-001", preco=Dinheiro(25.50), quantidade_estoque=20),
-            Peca(nome="Oleo Motor 5W30", sku="OL-001", preco=Dinheiro(45.00), quantidade_estoque=15),
+            Peca(
+                nome="Filtro de Oleo",
+                sku="FO-001",
+                preco=Dinheiro(25.50),
+                quantidade_estoque=20,
+            ),
+            Peca(
+                nome="Oleo Motor 5W30",
+                sku="OL-001",
+                preco=Dinheiro(45.00),
+                quantidade_estoque=15,
+            ),
         ]
 
     def test_calcular_com_servicos_e_pecas(self) -> None:

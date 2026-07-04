@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 
 from src.domain.entities.peca import Peca

@@ -1,8 +1,8 @@
 import uuid
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from src.api.dependencies import (
@@ -21,9 +21,12 @@ from src.application.dtos.ordem_servico_dtos import (
     ItemServicoInputDTO,
 )
 from src.application.usecases.ordem_servico.abrir_os import AbrirOsUseCase
-from src.application.usecases.ordem_servico.aprovar_orcamento import AprovarOrcamentoUseCase
-from src.application.usecases.ordem_servico.atualizar_status import AtualizarStatusOsUseCase
-from src.application.usecases.ordem_servico.consultar_status import ConsultarStatusOsUseCase
+from src.application.usecases.ordem_servico.aprovar_orcamento import (
+    AprovarOrcamentoUseCase,
+)
+from src.application.usecases.ordem_servico.atualizar_status import (
+    AtualizarStatusOsUseCase,
+)
 from src.application.usecases.ordem_servico.detalhar_os import DetalharOsUseCase
 from src.application.usecases.ordem_servico.listar_os import ListarOsUseCase
 from src.domain.exceptions.domain_exceptions import (
@@ -99,7 +102,9 @@ class StatusOsResponse(BaseModel):
     status: str
 
 
-@router.post("", response_model=OrdemServicoResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=OrdemServicoResponse, status_code=status.HTTP_201_CREATED
+)
 def abrir_os(
     req: AbrirOsRequest,
     os_repo: OsRepoDep,
@@ -110,13 +115,20 @@ def abrir_os(
     _: CurrentUserDep,
 ) -> OrdemServicoResponse:
     try:
-        use_case = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        use_case = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
         result = use_case.execute(
             AbrirOsDTO(
                 cliente_id=req.cliente_id,
                 veiculo_id=req.veiculo_id,
-                servicos=[ItemServicoInputDTO(servico_id=s.servico_id) for s in req.servicos],
-                pecas=[ItemPecaInputDTO(peca_id=p.peca_id, quantidade=p.quantidade) for p in req.pecas],
+                servicos=[
+                    ItemServicoInputDTO(servico_id=s.servico_id) for s in req.servicos
+                ],
+                pecas=[
+                    ItemPecaInputDTO(peca_id=p.peca_id, quantidade=p.quantidade)
+                    for p in req.pecas
+                ],
             )
         )
         return OrdemServicoResponse(**asdict(result))
@@ -158,7 +170,9 @@ def atualizar_status(
 ) -> OrdemServicoResponse:
     try:
         use_case = AtualizarStatusOsUseCase(repo)
-        result = use_case.execute(os_id, AtualizarStatusDTO(novo_status=req.novo_status))
+        result = use_case.execute(
+            os_id, AtualizarStatusDTO(novo_status=req.novo_status)
+        )
         return OrdemServicoResponse(**asdict(result))
     except OrdemServicoNaoEncontradaError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

@@ -1,4 +1,3 @@
-import uuid
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -6,13 +5,21 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from src.infrastructure.auth.jwt_handler import decode_access_token
-from src.infrastructure.database.repositories.cliente_repository import SqlAlchemyClienteRepository
+from src.infrastructure.database.repositories.cliente_repository import (
+    SqlAlchemyClienteRepository,
+)
 from src.infrastructure.database.repositories.ordem_servico_repository import (
     SqlAlchemyOrdemServicoRepository,
 )
-from src.infrastructure.database.repositories.peca_repository import SqlAlchemyPecaRepository
-from src.infrastructure.database.repositories.servico_repository import SqlAlchemyServicoRepository
-from src.infrastructure.database.repositories.veiculo_repository import SqlAlchemyVeiculoRepository
+from src.infrastructure.database.repositories.peca_repository import (
+    SqlAlchemyPecaRepository,
+)
+from src.infrastructure.database.repositories.servico_repository import (
+    SqlAlchemyServicoRepository,
+)
+from src.infrastructure.database.repositories.veiculo_repository import (
+    SqlAlchemyVeiculoRepository,
+)
 from src.infrastructure.database.session import get_session
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")

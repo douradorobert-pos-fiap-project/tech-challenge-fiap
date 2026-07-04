@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 
 import pytest
 
@@ -10,15 +9,29 @@ from src.application.dtos.ordem_servico_dtos import (
     ItemPecaInputDTO,
     ItemServicoInputDTO,
 )
-from src.application.ports.repositories.cliente_repository_port import ClienteRepositoryPort
-from src.application.ports.repositories.ordem_servico_repository_port import OrdemServicoRepositoryPort
+from src.application.ports.repositories.cliente_repository_port import (
+    ClienteRepositoryPort,
+)
+from src.application.ports.repositories.ordem_servico_repository_port import (
+    OrdemServicoRepositoryPort,
+)
 from src.application.ports.repositories.peca_repository_port import PecaRepositoryPort
-from src.application.ports.repositories.servico_repository_port import ServicoRepositoryPort
-from src.application.ports.repositories.veiculo_repository_port import VeiculoRepositoryPort
+from src.application.ports.repositories.servico_repository_port import (
+    ServicoRepositoryPort,
+)
+from src.application.ports.repositories.veiculo_repository_port import (
+    VeiculoRepositoryPort,
+)
 from src.application.usecases.ordem_servico.abrir_os import AbrirOsUseCase
-from src.application.usecases.ordem_servico.aprovar_orcamento import AprovarOrcamentoUseCase
-from src.application.usecases.ordem_servico.atualizar_status import AtualizarStatusOsUseCase
-from src.application.usecases.ordem_servico.consultar_status import ConsultarStatusOsUseCase
+from src.application.usecases.ordem_servico.aprovar_orcamento import (
+    AprovarOrcamentoUseCase,
+)
+from src.application.usecases.ordem_servico.atualizar_status import (
+    AtualizarStatusOsUseCase,
+)
+from src.application.usecases.ordem_servico.consultar_status import (
+    ConsultarStatusOsUseCase,
+)
 from src.application.usecases.ordem_servico.detalhar_os import DetalharOsUseCase
 from src.application.usecases.ordem_servico.listar_os import ListarOsUseCase
 from src.domain.entities.cliente import Cliente
@@ -34,7 +47,6 @@ from src.domain.value_objects.cpf_cnpj import CpfCnpj
 from src.domain.value_objects.dinheiro import Dinheiro
 from src.domain.value_objects.email import Email
 from src.domain.value_objects.placa import Placa
-from src.domain.value_objects.status_os import StatusOS
 
 
 class FakeClienteRepository(ClienteRepositoryPort):
@@ -155,7 +167,11 @@ class FakeOsRepository(OrdemServicoRepositoryPort):
 
 
 def _setup_repositories() -> tuple[
-    FakeOsRepository, FakeClienteRepository, FakeVeiculoRepository, FakeServicoRepository, FakePecaRepository
+    FakeOsRepository,
+    FakeClienteRepository,
+    FakeVeiculoRepository,
+    FakeServicoRepository,
+    FakePecaRepository,
 ]:
     os_repo = FakeOsRepository()
     cliente_repo = FakeClienteRepository()
@@ -233,7 +249,9 @@ class TestAbrirOsUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        use_case = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        use_case = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
 
         result = use_case.execute(
             AbrirOsDTO(
@@ -261,7 +279,9 @@ class TestAbrirOsUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        use_case = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        use_case = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
 
         result = use_case.execute(
             AbrirOsDTO(
@@ -281,7 +301,9 @@ class TestAbrirOsUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        use_case = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        use_case = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
 
         with pytest.raises(Exception):
             use_case.execute(
@@ -300,7 +322,9 @@ class TestConsultarStatusOsUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        abrir_uc = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        abrir_uc = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
         created = abrir_uc.execute(
             AbrirOsDTO(
                 cliente_id=str(ids["cliente"]),
@@ -331,7 +355,9 @@ class TestAprovarOrcamentoUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        abrir_uc = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        abrir_uc = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
         created = abrir_uc.execute(
             AbrirOsDTO(
                 cliente_id=str(ids["cliente"]),
@@ -352,7 +378,9 @@ class TestAprovarOrcamentoUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        abrir_uc = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        abrir_uc = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
         created = abrir_uc.execute(
             AbrirOsDTO(
                 cliente_id=str(ids["cliente"]),
@@ -373,7 +401,9 @@ class TestAprovarOrcamentoUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        abrir_uc = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        abrir_uc = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
         created = abrir_uc.execute(
             AbrirOsDTO(
                 cliente_id=str(ids["cliente"]),
@@ -394,7 +424,9 @@ class TestListarOsUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        abrir_uc = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        abrir_uc = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
 
         os1 = abrir_uc.execute(
             AbrirOsDTO(
@@ -404,7 +436,7 @@ class TestListarOsUseCase:
                 pecas=[],
             )
         )
-        os2 = abrir_uc.execute(
+        abrir_uc.execute(
             AbrirOsDTO(
                 cliente_id=str(ids["cliente"]),
                 veiculo_id=str(ids["veiculo"]),
@@ -428,7 +460,9 @@ class TestListarOsUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        abrir_uc = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        abrir_uc = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
         os1 = abrir_uc.execute(
             AbrirOsDTO(
                 cliente_id=str(ids["cliente"]),
@@ -463,7 +497,9 @@ class TestDetalharOsUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        abrir_uc = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        abrir_uc = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
         created = abrir_uc.execute(
             AbrirOsDTO(
                 cliente_id=str(ids["cliente"]),
@@ -496,7 +532,9 @@ class TestAtualizarStatusOsUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        abrir_uc = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        abrir_uc = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
         created = abrir_uc.execute(
             AbrirOsDTO(
                 cliente_id=str(ids["cliente"]),
@@ -510,7 +548,9 @@ class TestAtualizarStatusOsUseCase:
         aprovar_uc.execute(created.id, AprovarOrcamentoDTO(acao="APROVAR"))
 
         atualizar_uc = AtualizarStatusOsUseCase(os_repo)
-        result = atualizar_uc.execute(created.id, AtualizarStatusDTO(novo_status="FINALIZADA"))
+        result = atualizar_uc.execute(
+            created.id, AtualizarStatusDTO(novo_status="FINALIZADA")
+        )
 
         assert result.status == "FINALIZADA"
 
@@ -519,7 +559,9 @@ class TestAtualizarStatusOsUseCase:
         os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo = repos
         ids = _get_ids(repos)
 
-        abrir_uc = AbrirOsUseCase(os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo)
+        abrir_uc = AbrirOsUseCase(
+            os_repo, cliente_repo, veiculo_repo, servico_repo, peca_repo
+        )
         created = abrir_uc.execute(
             AbrirOsDTO(
                 cliente_id=str(ids["cliente"]),
@@ -531,7 +573,9 @@ class TestAtualizarStatusOsUseCase:
 
         atualizar_uc = AtualizarStatusOsUseCase(os_repo)
         with pytest.raises(TransicaoStatusInvalidaError):
-            atualizar_uc.execute(created.id, AtualizarStatusDTO(novo_status="FINALIZADA"))
+            atualizar_uc.execute(
+                created.id, AtualizarStatusDTO(novo_status="FINALIZADA")
+            )
 
     def test_atualizar_inexistente_raises(self) -> None:
         repos = _setup_repositories()
@@ -539,4 +583,6 @@ class TestAtualizarStatusOsUseCase:
 
         atualizar_uc = AtualizarStatusOsUseCase(os_repo)
         with pytest.raises(OrdemServicoNaoEncontradaError):
-            atualizar_uc.execute(uuid.uuid4(), AtualizarStatusDTO(novo_status="FINALIZADA"))
+            atualizar_uc.execute(
+                uuid.uuid4(), AtualizarStatusDTO(novo_status="FINALIZADA")
+            )

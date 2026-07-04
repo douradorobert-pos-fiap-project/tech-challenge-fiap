@@ -29,7 +29,9 @@ class Peca:
         if quantidade <= 0:
             raise ValueError("Quantidade para baixa deve ser positiva")
         if quantidade > self.quantidade_estoque:
-            raise EstoqueInsuficienteError(self.nome, quantidade, self.quantidade_estoque)
+            raise EstoqueInsuficienteError(
+                self.nome, quantidade, self.quantidade_estoque
+            )
         self.quantidade_estoque -= quantidade
 
     def repor_estoque(self, quantidade: int) -> None:

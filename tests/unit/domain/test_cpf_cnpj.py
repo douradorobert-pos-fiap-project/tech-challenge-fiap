@@ -1,6 +1,6 @@
 import pytest
 
-from src.domain.exceptions.domain_exceptions import CPFInvalidoError, CNPJInvalidoError
+from src.domain.exceptions.domain_exceptions import CNPJInvalidoError, CPFInvalidoError
 from src.domain.value_objects.cpf_cnpj import CpfCnpj
 
 

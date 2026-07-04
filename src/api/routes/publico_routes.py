@@ -1,11 +1,13 @@
 import uuid
 from dataclasses import asdict
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from src.api.dependencies import OsRepoDep
-from src.application.usecases.ordem_servico.consultar_status import ConsultarStatusOsUseCase
+from src.application.usecases.ordem_servico.consultar_status import (
+    ConsultarStatusOsUseCase,
+)
 from src.domain.exceptions.domain_exceptions import OrdemServicoNaoEncontradaError
 
 router = APIRouter(prefix="/api/v1/public", tags=["Consulta Publica"])

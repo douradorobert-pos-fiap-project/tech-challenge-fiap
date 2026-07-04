@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from src.api.dependencies import CurrentUserDep, ServicoRepoDep
@@ -45,7 +45,9 @@ def criar_servico(
 ) -> ServicoResponse:
     use_case = CreateServicoUseCase(repo)
     result = use_case.execute(
-        CreateServicoDTO(nome=req.nome, descricao=req.descricao, preco_base=req.preco_base)
+        CreateServicoDTO(
+            nome=req.nome, descricao=req.descricao, preco_base=req.preco_base
+        )
     )
     return ServicoResponse(**result.__dict__)
 

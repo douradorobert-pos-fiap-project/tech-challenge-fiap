@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Poetry
+        run: pip install poetry
+
+      - name: Configurar Poetry
+        run: poetry config virtualenvs.create false
+
+      - name: Instalar dependências
+        run: poetry install --no-interaction
+
+      - name: Executar lint
+        run: poetry run pre-commit run --all-files
+
+      - name: Executar testes
+        run: poetry run pytest

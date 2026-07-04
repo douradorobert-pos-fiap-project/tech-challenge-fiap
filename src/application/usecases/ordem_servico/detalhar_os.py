@@ -1,9 +1,11 @@
 import uuid
 
 from src.application.dtos.ordem_servico_dtos import OrdemServicoResponseDTO
-from src.application.ports.repositories.ordem_servico_repository_port import OrdemServicoRepositoryPort
-from src.domain.exceptions.domain_exceptions import OrdemServicoNaoEncontradaError
+from src.application.ports.repositories.ordem_servico_repository_port import (
+    OrdemServicoRepositoryPort,
+)
 from src.application.usecases.ordem_servico.abrir_os import AbrirOsUseCase
+from src.domain.exceptions.domain_exceptions import OrdemServicoNaoEncontradaError
 
 
 class DetalharOsUseCase:

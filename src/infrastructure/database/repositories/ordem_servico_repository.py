@@ -1,13 +1,14 @@
 import uuid
-from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from src.application.ports.repositories.ordem_servico_repository_port import OrdemServicoRepositoryPort
+from src.application.ports.repositories.ordem_servico_repository_port import (
+    OrdemServicoRepositoryPort,
+)
 from src.domain.entities.item import ItemPeca, ItemServico
-from src.domain.entities.ordem_servico import OrdemServico
 from src.domain.entities.orcamento import Orcamento
+from src.domain.entities.ordem_servico import OrdemServico
 from src.domain.value_objects.dinheiro import Dinheiro
 from src.domain.value_objects.status_os import StatusOS
 from src.infrastructure.database.models.ordem_servico_model import (

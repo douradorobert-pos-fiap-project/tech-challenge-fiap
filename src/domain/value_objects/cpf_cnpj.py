@@ -1,6 +1,6 @@
 import re
 
-from src.domain.exceptions.domain_exceptions import CPFInvalidoError, CNPJInvalidoError
+from src.domain.exceptions.domain_exceptions import CNPJInvalidoError, CPFInvalidoError
 
 
 class CpfCnpj:

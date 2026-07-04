@@ -3,7 +3,9 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from src.application.ports.repositories.servico_repository_port import ServicoRepositoryPort
+from src.application.ports.repositories.servico_repository_port import (
+    ServicoRepositoryPort,
+)
 from src.domain.entities.servico import Servico
 from src.domain.value_objects.dinheiro import Dinheiro
 from src.infrastructure.database.models.servico_model import ServicoModel

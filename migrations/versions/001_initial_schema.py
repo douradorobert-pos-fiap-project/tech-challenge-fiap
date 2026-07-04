@@ -5,10 +5,11 @@ Revises:
 Create Date: 2025-06-27
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "001"
@@ -37,7 +38,9 @@ def upgrade() -> None:
     op.create_table(
         "veiculos",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("cliente_id", sa.String(36), sa.ForeignKey("clientes.id"), nullable=False),
+        sa.Column(
+            "cliente_id", sa.String(36), sa.ForeignKey("clientes.id"), nullable=False
+        ),
         sa.Column("placa", sa.String(10), unique=True, nullable=False),
         sa.Column("marca", sa.String(100), nullable=False),
         sa.Column("modelo", sa.String(100), nullable=False),
@@ -78,8 +81,12 @@ def upgrade() -> None:
     op.create_table(
         "ordens_servico",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("cliente_id", sa.String(36), sa.ForeignKey("clientes.id"), nullable=False),
-        sa.Column("veiculo_id", sa.String(36), sa.ForeignKey("veiculos.id"), nullable=False),
+        sa.Column(
+            "cliente_id", sa.String(36), sa.ForeignKey("clientes.id"), nullable=False
+        ),
+        sa.Column(
+            "veiculo_id", sa.String(36), sa.ForeignKey("veiculos.id"), nullable=False
+        ),
         sa.Column("status", sa.String(30), server_default="RECEBIDA"),
         sa.Column("orcamento_aprovado", sa.Boolean(), server_default=sa.text("false")),
         sa.Column("orcamento_recusado", sa.Boolean(), server_default=sa.text("false")),
@@ -97,24 +104,38 @@ def upgrade() -> None:
     op.create_table(
         "itens_servico",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("ordem_servico_id", sa.String(36), sa.ForeignKey("ordens_servico.id"), nullable=False),
+        sa.Column(
+            "ordem_servico_id",
+            sa.String(36),
+            sa.ForeignKey("ordens_servico.id"),
+            nullable=False,
+        ),
         sa.Column("servico_id", sa.String(36), nullable=False),
         sa.Column("nome", sa.String(255), nullable=False),
         sa.Column("preco", sa.Numeric(10, 2), nullable=False),
     )
-    op.create_index("idx_itens_servico_ordem_servico_id", "itens_servico", ["ordem_servico_id"])
+    op.create_index(
+        "idx_itens_servico_ordem_servico_id", "itens_servico", ["ordem_servico_id"]
+    )
 
     # Create itens_peca table
     op.create_table(
         "itens_peca",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("ordem_servico_id", sa.String(36), sa.ForeignKey("ordens_servico.id"), nullable=False),
+        sa.Column(
+            "ordem_servico_id",
+            sa.String(36),
+            sa.ForeignKey("ordens_servico.id"),
+            nullable=False,
+        ),
         sa.Column("peca_id", sa.String(36), nullable=False),
         sa.Column("nome", sa.String(255), nullable=False),
         sa.Column("preco_unitario", sa.Numeric(10, 2), nullable=False),
         sa.Column("quantidade", sa.Integer(), nullable=False),
     )
-    op.create_index("idx_itens_peca_ordem_servico_id", "itens_peca", ["ordem_servico_id"])
+    op.create_index(
+        "idx_itens_peca_ordem_servico_id", "itens_peca", ["ordem_servico_id"]
+    )
 
 
 def downgrade() -> None:
