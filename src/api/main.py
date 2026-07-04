@@ -19,7 +19,8 @@ from src.infrastructure.database.session import engine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    if settings.DATABASE_URL.startswith("sqlite"):
+        Base.metadata.create_all(bind=engine)
     yield
 
 

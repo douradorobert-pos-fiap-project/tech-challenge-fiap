@@ -8,9 +8,11 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - APP_ENV=${APP_ENV}
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      - db
     restart: unless-stopped
 
   db:
@@ -24,8 +26,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
-    profiles:
-      - postgres
 
 volumes:
   pgdata:

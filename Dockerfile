@@ -30,7 +30,6 @@ USER appuser
 
 EXPOSE 8000
 
-ENV PYTHONPATH=/app \
-    DATABASE_URL=sqlite:///./data/oficina.db
+ENV PYTHONPATH=/app
 
 CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

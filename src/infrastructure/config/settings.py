@@ -8,6 +8,10 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = "sqlite:///./data/oficina.db"
 
+    POSTGRES_DB: str = "oficina"
+    POSTGRES_USER: str = "oficina"
+    POSTGRES_PASSWORD: str = "oficina123"
+
     JWT_SECRET: str = "secret-key-change-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_MINUTES: int = 60
