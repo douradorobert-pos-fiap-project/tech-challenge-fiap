@@ -33,7 +33,9 @@ jobs:
         run: poetry install --no-interaction
 
       - name: Executar lint
-        run: poetry run pre-commit run --all-files
+        run: |
+          poetry run black --check .
+          poetry run isort --check-only .
 
       - name: Executar testes
         run: poetry run pytest
