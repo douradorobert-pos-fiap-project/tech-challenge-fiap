@@ -74,6 +74,83 @@
                 "panel": "dedicated"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "terraform:init",
+            "type": "shell",
+            "command": "terraform -chdir=terraform init",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "terraform:validate",
+            "type": "shell",
+            "command": "terraform -chdir=terraform validate",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "terraform:plan",
+            "type": "shell",
+            "command": "terraform -chdir=terraform plan",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "terraform:apply",
+            "type": "shell",
+            "command": "terraform -chdir=terraform apply -auto-approve",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "terraform:destroy",
+            "type": "shell",
+            "command": "terraform -chdir=terraform destroy -auto-approve",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "k9s:open",
+            "type": "shell",
+            "command": "k9s -c kind-tech-challenge",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "port-forward:api",
+            "type": "shell",
+            "command": "kubectl port-forward -n oficina svc/oficina-api 8080:80",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
         }
     ]
 }
