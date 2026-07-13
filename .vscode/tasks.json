@@ -1,0 +1,79 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "compose:up",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait",
+            "group": "build",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "compose:down",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "compose:build",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml build",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "compose:logs",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "test:run",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T app pytest tests/ -v",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "lint:run",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T app ruff check src/",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "alembic:upgrade",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T app alembic upgrade head",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
