@@ -11,6 +11,8 @@ WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
 COPY src/ ./src/
+COPY alembic.ini ./
+COPY migrations/ ./migrations/
 
 RUN poetry install --no-root
 
@@ -23,6 +25,8 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
 COPY --from=builder /app/src/ ./src/
+COPY --from=builder /app/alembic.ini ./
+COPY --from=builder /app/migrations/ ./migrations/
 
 RUN mkdir -p /app/data && chown -R appuser:appuser /app
 

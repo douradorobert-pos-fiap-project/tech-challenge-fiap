@@ -179,6 +179,37 @@ resource "null_resource" "k8s_postgres_service" {
   depends_on = [null_resource.k8s_postgres_statefulset]
 }
 
+resource "null_resource" "k8s_migration_job" {
+  triggers = {
+    yaml         = filemd5("${local.k8s_dir}/migration-job.yaml")
+    k8s_dir      = local.k8s_dir
+    kube_context = local.kube_context
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "Aguardando pod postgres ficar Ready..."
+      kubectl wait --for=condition=ready --timeout=60s pod \
+        -n oficina -l app.kubernetes.io/component=postgres \
+        --context=${self.triggers.kube_context}
+      kubectl delete job alembic-migrations -n oficina --ignore-not-found \
+        --context=${self.triggers.kube_context}
+      kubectl apply -f ${self.triggers.k8s_dir}/migration-job.yaml \
+        --context=${self.triggers.kube_context}
+      kubectl wait --for=condition=complete --timeout=120s \
+        job/alembic-migrations -n oficina \
+        --context=${self.triggers.kube_context}
+    EOT
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "kubectl delete job alembic-migrations -n oficina --context=${self.triggers.kube_context} --ignore-not-found"
+  }
+
+  depends_on = [null_resource.k8s_postgres_service]
+}
+
 resource "null_resource" "k8s_deployment" {
   triggers = {
     yaml         = filemd5("${local.k8s_dir}/deployment.yaml")
@@ -200,6 +231,7 @@ resource "null_resource" "k8s_deployment" {
     null_resource.k8s_secret,
     null_resource.k8s_ghcr_secret,
     null_resource.k8s_postgres_statefulset,
+    null_resource.k8s_migration_job,
   ]
 }
 

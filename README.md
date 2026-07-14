@@ -43,7 +43,8 @@ src/
 ├── application/      # Use cases, DTOs, Ports
 ├── infrastructure/   # Repositorios, auth, config, adapters
 ├── api/              # Rotas FastAPI, dependencies
-└── migrations/       # Alembic migrations
+├── migrations/       # Alembic migrations
+└── alembic.ini       # Configuracao do Alembic
 tests/
 ├── unit/             # Testes do dominio e aplicacao
 └── integration/      # Testes da API
@@ -64,6 +65,9 @@ poetry install
 # Copiar .env
 cp .env.example .env
 
+# Executar migracoes do banco
+poetry run alembic upgrade head
+
 # Executar aplicacao
 poetry run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 
@@ -77,11 +81,13 @@ poetry run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 # Build e execução
 docker compose up --build
 
-# Com PostgreSQL (opcional)
-docker compose --profile postgres up --build
+# Executar migracoes do banco (uma vez)
+docker compose run --rm app alembic -c /app/alembic.ini upgrade head
 
 # Acessar: http://localhost:8000/docs
 ```
+
+> Para usar PostgreSQL, utilize `docker compose.dev.yml`: `docker compose -f docker-compose.dev.yml up --build`
 
 ### Opcao 3: Kubernetes + Terraform
 
