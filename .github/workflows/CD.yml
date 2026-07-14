@@ -38,7 +38,7 @@ jobs:
       - name: Build e push da imagem
         run: |
           IMAGE="ghcr.io/${{ secrets.GHCR_USERNAME }}/tech-challenge-fiap/tech-challenge-app"
-          TAG="0.0.4-${{ github.sha }}"
+          TAG="${{ github.sha }}"
           docker build -t "${IMAGE}:${TAG}" -t "${IMAGE}:latest" .
           docker push "${IMAGE}:${TAG}"
           docker push "${IMAGE}:latest"
@@ -46,7 +46,7 @@ jobs:
       - name: Atualizar tag da imagem nos manifestos
         run: |
           IMAGE="ghcr.io/${{ secrets.GHCR_USERNAME }}/tech-challenge-fiap/tech-challenge-app"
-          TAG="0.0.4-${{ github.sha }}"
+          TAG="${{ github.sha }}"
           sed -i "s|image: ghcr.io/.*/tech-challenge-app:.*|image: ${IMAGE}:${TAG}|" k8s/deployment.yaml
           sed -i "s|image: ghcr.io/.*/tech-challenge-app:.*|image: ${IMAGE}:${TAG}|" k8s/migration-job.yaml
 
@@ -59,7 +59,7 @@ jobs:
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.6.0"
+          terraform_version: "1.10.5"
 
       - name: Terraform init e apply
         working-directory: terraform

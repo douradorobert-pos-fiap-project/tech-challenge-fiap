@@ -11,6 +11,7 @@ data/
 .env
 .mypy_cache/
 .ruff_cache/
+.act.secrets
 
 # Terraform
 terraform/.terraform/
