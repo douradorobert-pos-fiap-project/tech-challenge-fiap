@@ -1,0 +1,42 @@
+name: Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Poetry
+        run: pip install poetry
+
+      - name: Configurar Poetry
+        run: poetry config virtualenvs.create false
+
+      - name: Instalar dependências
+        run: poetry install --no-interaction
+
+      - name: Executar lint
+        run: |
+          poetry run black --check .
+          poetry run isort --check-only .
+
+      - name: Executar testes com cobertura
+        run: poetry run pytest --cov=src --cov-report=term --cov-fail-under=80
+
+      - name: Build da imagem (dry-run)
+        run: docker build -t tech-challenge-app:${{ github.sha }} .
