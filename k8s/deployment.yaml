@@ -22,7 +22,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: api
-          image: ghcr.io/douradorobert/tech-challenge-fiap/tech-challenge-app:0.0.4
+          image: ghcr.io/douradorobert/tech-challenge-fiap/tech-challenge-app:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
