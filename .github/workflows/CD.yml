@@ -1,0 +1,98 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Poetry
+        run: pip install poetry
+
+      - name: Configurar Poetry
+        run: poetry config virtualenvs.create false
+
+      - name: Instalar dependências
+        run: poetry install --no-interaction
+
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build e push da imagem
+        run: |
+          IMAGE="ghcr.io/${{ secrets.GHCR_USERNAME }}/tech-challenge-fiap/tech-challenge-app"
+          TAG="0.0.4-${{ github.sha }}"
+          docker build -t "${IMAGE}:${TAG}" -t "${IMAGE}:latest" .
+          docker push "${IMAGE}:${TAG}"
+          docker push "${IMAGE}:latest"
+
+      - name: Atualizar tag da imagem nos manifestos
+        run: |
+          IMAGE="ghcr.io/${{ secrets.GHCR_USERNAME }}/tech-challenge-fiap/tech-challenge-app"
+          TAG="0.0.4-${{ github.sha }}"
+          sed -i "s|image: ghcr.io/.*/tech-challenge-app:.*|image: ${IMAGE}:${TAG}|" k8s/deployment.yaml
+          sed -i "s|image: ghcr.io/.*/tech-challenge-app:.*|image: ${IMAGE}:${TAG}|" k8s/migration-job.yaml
+
+      - name: Instalar Kind
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: tech-challenge
+          wait: 120s
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.0"
+
+      - name: Terraform init e apply
+        working-directory: terraform
+        env:
+          TF_VAR_ghcr_username: ${{ secrets.GHCR_USERNAME }}
+          TF_VAR_ghcr_pat: ${{ secrets.GHCR_PAT }}
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Aguardar rollout do deployment
+        run: |
+          kubectl rollout status deployment/oficina-api -n oficina --timeout=120s
+
+      - name: Smoke test - health check
+        run: |
+          kubectl run -n oficina smoke-test --image=curlimages/curl:8.12.0 --restart=Never --command -- sh -c "
+            echo 'Iniciando health check...'
+            for i in \$(seq 1 15); do
+              if curl -sf --connect-timeout 3 --max-time 5 http://oficina-api.oficina:80/health; then
+                echo 'Health check OK'
+                exit 0
+              fi
+              echo \"Tentativa \$i/15 - aguardando 2s...\"
+              sleep 2
+            done
+            echo 'Health check falhou apos 15 tentativas'
+            exit 1
+          "
+          kubectl wait --for=condition=complete --timeout=90s pod/smoke-test -n oficina
+          kubectl logs -n oficina smoke-test
+
+      - name: Limpar smoke test
+        if: always()
+        run: |
+          kubectl delete pod smoke-test -n oficina --ignore-not-found
