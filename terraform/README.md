@@ -25,10 +25,14 @@ terraform init
 terraform plan
 terraform apply -auto-approve
 
-# Acessar via port-forward
+# Opcao A - Port-forward (recomendado para dev)
 kubectl port-forward -n oficina svc/oficina-api 8080:80
 
 # Swagger: http://localhost:8080/docs
+
+# Opcao B - NodePort (acesso direto)
+NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}')
+# Swagger: http://$NODE_IP:30080/docs
 ```
 
 ## Destruir

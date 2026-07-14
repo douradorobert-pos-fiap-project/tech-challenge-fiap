@@ -96,9 +96,13 @@ cd terraform
 terraform init
 terraform apply -auto-approve
 
-# Port-forward para acessar
+# Opcao A - Port-forward (recomendado para dev)
 kubectl port-forward -n oficina svc/oficina-api 8080:80
 # Acessar: http://localhost:8080/docs
+
+# Opcao B - NodePort (acesso direto)
+NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}')
+# Acessar: http://$NODE_IP:30080/docs
 ```
 
 ## Credenciais de Acesso
