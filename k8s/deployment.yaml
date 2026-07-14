@@ -18,9 +18,12 @@ spec:
         app.kubernetes.io/name: oficina
         app.kubernetes.io/component: api
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: api
-          image: ghcr.io/soat-architecture/tech-challenge-fiap:latest
+          image: ghcr.io/douradorobert/tech-challenge-fiap/tech-challenge-app:0.0.4
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
               name: http

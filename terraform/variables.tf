@@ -1,37 +1,28 @@
 variable "cluster_name" {
   description = "Nome do cluster Kind"
   type        = string
-  default     = "oficina-cluster"
+  default     = "tech-challenge"
 }
 
-variable "namespace" {
-  description = "Namespace Kubernetes para a aplicacao"
+variable "kubernetes_version" {
+  description = "Versao do Kubernetes no Kind"
   type        = string
-  default     = "oficina"
+  default     = "v1.31.0"
 }
 
-variable "postgres_password" {
-  description = "Senha do PostgreSQL"
+variable "kind_node_image" {
+  description = "Imagem do node Kind"
   type        = string
-  default     = "oficina123"
+  default     = null
+}
+
+variable "ghcr_username" {
+  description = "Usuario do GitHub Container Registry"
+  type        = string
+}
+
+variable "ghcr_pat" {
+  description = "Personal Access Token do GitHub com escopo write:packages"
+  type        = string
   sensitive   = true
-}
-
-variable "jwt_secret" {
-  description = "Secret do JWT"
-  type        = string
-  default     = "change-this-secret-in-production"
-  sensitive   = true
-}
-
-variable "app_image" {
-  description = "Imagem Docker da aplicacao"
-  type        = string
-  default     = "ghcr.io/soat-architecture/tech-challenge-fiap:latest"
-}
-
-variable "postgres_storage" {
-  description = "Tamanho do volume do PostgreSQL"
-  type        = string
-  default     = "10Gi"
 }

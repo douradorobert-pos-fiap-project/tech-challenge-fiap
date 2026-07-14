@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-migrations
+  namespace: oficina
+  labels:
+    app.kubernetes.io/name: oficina
+    app.kubernetes.io/component: migration
+spec:
+  ttlSecondsAfterFinished: 120
+  backoffLimit: 3
+  activeDeadlineSeconds: 180
+  template:
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: alembic
+          image: ghcr.io/douradorobert/tech-challenge-fiap/tech-challenge-app:0.0.4
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: oficina-config
+            - secretRef:
+                name: oficina-secrets
+          command:
+            - sh
+            - -c
+            - |
+              echo "Aguardando postgres..."
+              for i in $(seq 1 30); do
+                python -c "import psycopg2,os; psycopg2.connect(os.environ['DATABASE_URL'])" 2>/dev/null \
+                  && echo "Postgres pronto!" && break
+                echo "Tentativa $i/30 - aguardando 2s..."
+                sleep 2
+              done
+              echo "Rodando migrations..."
+              alembic -c /app/alembic.ini upgrade head

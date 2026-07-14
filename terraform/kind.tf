@@ -1,37 +1,45 @@
-resource "kind_cluster" "oficina" {
-  name           = var.cluster_name
-  node_image     = "kindest/node:v1.30.0"
-  wait_for_ready = true
+resource "null_resource" "kind_cluster" {
+  triggers = {
+    cluster_name       = var.cluster_name
+    kubernetes_version = var.kubernetes_version
+  }
 
-  kind_config {
-    kind        = "Cluster"
-    api_version = "kind.x-k8s.io/v1alpha4"
+  provisioner "local-exec" {
+    command = <<-EOT
+      kind create cluster \
+        --name ${var.cluster_name} \
+        --image kindest/node:${var.kubernetes_version} \
+        --wait 120s
+      kubectl config use-context kind-${var.cluster_name}
+    EOT
+  }
 
-    node {
-      role = "control-plane"
-
-      extra_port_mappings {
-        container_port = 30080
-        host_port      = 8080
-      }
-    }
-
-    node {
-      role = "worker"
-    }
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      kind delete cluster --name ${self.triggers.cluster_name}
+    EOT
   }
 }
 
-provider "kubernetes" {
-  host                   = kind_cluster.oficina.endpoint
-  client_certificate     = kind_cluster.oficina.client_certificate
-  client_key             = kind_cluster.oficina.client_key
-  cluster_ca_certificate = kind_cluster.oficina.cluster_ca_certificate
-}
+resource "terraform_data" "kind_ready" {
+  depends_on = [null_resource.kind_cluster]
 
-provider "kubectl" {
-  host                   = kind_cluster.oficina.endpoint
-  client_certificate     = kind_cluster.oficina.client_certificate
-  client_key             = kind_cluster.oficina.client_key
-  cluster_ca_certificate = kind_cluster.oficina.cluster_ca_certificate
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Aguardando cluster Kind ficar acessivel..."
+      i=1
+      while [ $i -le 30 ]; do
+        if kubectl cluster-info --context=${local.kube_context} > /dev/null 2>&1; then
+          echo "Cluster pronto!"
+          exit 0
+        fi
+        echo "Tentativa $i/30 - aguardando..."
+        i=$((i + 1))
+        sleep 2
+      done
+      echo "Cluster nao respondeu apos 60 segundos"
+      exit 1
+    EOT
+  }
 }
