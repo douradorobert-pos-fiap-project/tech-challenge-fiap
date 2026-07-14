@@ -1,22 +1,23 @@
 name: CI
 
 on:
-  pull_request:
+  workflow_run:
+    workflows: ["Validation"]
     branches:
       - main
-
-  push:
-    branches:
-      - main
-      - develop
+    types:
+      - completed
 
 jobs:
-  validate:
+  build:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configurar Python
         uses: actions/setup-python@v5
@@ -32,13 +33,17 @@ jobs:
       - name: Instalar dependências
         run: poetry install --no-interaction
 
-      - name: Executar lint
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build e push da imagem
         run: |
-          poetry run black --check .
-          poetry run isort --check-only .
-
-      - name: Executar testes com cobertura
-        run: poetry run pytest --cov=src --cov-report=term --cov-fail-under=80
-
-      - name: Build da imagem Docker
-        run: docker build -t tech-challenge-app:${{ github.sha }} .
+          IMAGE="ghcr.io/${{ secrets.GHCR_USERNAME }}/tech-challenge-fiap/tech-challenge-app"
+          TAG="${{ github.event.workflow_run.head_sha }}"
+          docker build -t "${IMAGE}:${TAG}" -t "${IMAGE}:latest" .
+          docker push "${IMAGE}:${TAG}"
+          docker push "${IMAGE}:latest"
