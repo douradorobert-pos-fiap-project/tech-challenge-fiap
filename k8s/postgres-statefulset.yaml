@@ -1,18 +1,3 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: postgres-pvc
-  namespace: oficina
-  labels:
-    app.kubernetes.io/name: oficina
-    app.kubernetes.io/component: postgres
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -80,21 +65,3 @@ spec:
         - name: postgres-data
           persistentVolumeClaim:
             claimName: postgres-pvc
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-  namespace: oficina
-  labels:
-    app.kubernetes.io/name: oficina
-    app.kubernetes.io/component: postgres
-spec:
-  type: ClusterIP
-  ports:
-    - port: 5432
-      targetPort: postgres
-      name: postgres
-  selector:
-    app.kubernetes.io/name: oficina
-    app.kubernetes.io/component: postgres

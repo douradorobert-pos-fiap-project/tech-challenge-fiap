@@ -13,14 +13,10 @@ from src.api.routes import (
     veiculo_routes,
 )
 from src.infrastructure.config.settings import settings
-from src.infrastructure.database.base import Base
-from src.infrastructure.database.session import engine
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if settings.DATABASE_URL.startswith("sqlite"):
-        Base.metadata.create_all(bind=engine)
     yield
 
 

@@ -1,0 +1,206 @@
+{
+    "version": "2.0.0",
+    "inputs": [
+        {
+            "id": "tagVersion",
+            "type": "promptString",
+            "description": "Tag da imagem para o GHCR. Ex: `0.0.4`",
+        }
+    ],
+    "tasks": [
+        {
+            "label": "compose:up",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait",
+            "group": "build",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "compose:down",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "compose:build",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml build",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "compose:logs",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "test:run",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T app pytest tests/ -v",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "lint:run",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T app ruff check src/",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "alembic:upgrade",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T app alembic upgrade head",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "terraform:init",
+            "type": "shell",
+            "command": "terraform -chdir=terraform init",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "terraform:validate",
+            "type": "shell",
+            "command": "terraform -chdir=terraform validate",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "terraform:plan",
+            "type": "shell",
+            "command": "terraform -chdir=terraform plan",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "terraform:apply",
+            "type": "shell",
+            "command": "terraform -chdir=terraform apply -auto-approve",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "terraform:destroy",
+            "type": "shell",
+            "command": "terraform -chdir=terraform destroy -auto-approve",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "k9s:open",
+            "type": "shell",
+            "command": "k9s -c kind-tech-challenge",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "port-forward:api",
+            "type": "shell",
+            "command": "kubectl port-forward -n oficina svc/oficina-api 8080:80",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker:build",
+            "type": "shell",
+            "command": "docker build -t tech-challenge-fiap .",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker:login",
+            "type": "shell",
+            "command": "docker login ghcr.io -u douradorobert",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker:tag",
+            "type": "shell",
+            "command": "docker tag tech-challenge-fiap ghcr.io/douradorobert/tech-challenge-fiap/tech-challenge-app:${input:tagVersion}",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker:push",
+            "type": "shell",
+            "command": "docker push ghcr.io/douradorobert/tech-challenge-fiap/tech-challenge-app:${input:tagVersion}",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
