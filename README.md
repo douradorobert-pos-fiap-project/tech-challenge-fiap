@@ -112,10 +112,9 @@ NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}
 
 ## APIs Disponiveis
 
-### Autenticacao (JWT)
-- `POST /api/v1/auth/login` - Login e obtencao do token JWT
-
 ### APIs Administrativas (JWT obrigatorio)
+- `POST /api/v1/auth/login` - Login e obtencao do token JWT
+- `GET /api/v1/auth/me` - Informacoes do usuario logado
 - `POST/GET/PUT/DELETE /api/v1/clientes` - CRUD de clientes
 - `POST/GET/PUT/DELETE /api/v1/veiculos` - CRUD de veiculos
 - `POST/GET/PUT/DELETE /api/v1/servicos` - CRUD de servicos do catalogo
@@ -127,6 +126,7 @@ NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}
 - `POST /api/v1/ordens-servico/{id}/orcamento/aprovar` - Aprovacao/recusa de orcamento (endpoint publico para notificacoes externas)
 
 ### APIs Publicas (sem JWT)
+- `GET /health` - Health check da aplicacao
 - `GET /api/v1/public/ordens-servico/{id}/status` - Consulta publica do status da OS
 
 ### Ordenacao de Listagem de OS
@@ -156,17 +156,17 @@ poetry run pytest --cov=src --cov-report=html --cov-fail-under=80
 # Abrir htmlcov/index.html
 ```
 
-### Cobertura atual: 85%+ nos dominios criticos
+### Cobertura minima: 80%
 
 ## CI/CD
 
-### Pipeline de CI (`.github/workflows/ci.yml`)
-- Lint (Ruff)
+### Pipeline de CI (`.github/workflows/pipeline.yml`)
+- Lint (Black + isort)
 - Testes automatizados com cobertura minima de 80%
 - Build da imagem Docker
 - Smoke test do container
 
-### Pipeline de CD (`.github/workflows/cd.yml`)
+### Pipeline de CD (`.github/workflows/pipeline.yml` - job deploy)
 - Build e push da imagem para GitHub Container Registry
 - Provisionamento do cluster Kubernetes via Terraform (Kind)
 - Deploy do PostgreSQL (StatefulSet)
