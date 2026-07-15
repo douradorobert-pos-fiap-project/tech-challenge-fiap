@@ -46,13 +46,12 @@ terraform destroy -auto-approve
 | Arquivo | Descricao |
 |---------|-----------|
 | `versions.tf` | Providers e versoes |
-| `kind.tf` | Criacao do cluster Kind |
-| `manifests.tf` | Aplicacao dos manifestos k8s/ |
+| `kind.tf` | Criacao do cluster Kind via `null_resource` + `local-exec` |
+| `manifests.tf` | Aplicacao dos manifestos k8s/ via `null_resource` + `local-exec` |
 | `variables.tf` | Variaveis de configuracao |
 | `terraform.tfvars` | Valores default |
 
 ## Observacoes
 
-- Todo o provisionamento e feito exclusivamente via Terraform (sem comandos `kubectl` manuais).
-- Os manifestos em `../k8s/` sao a fonte da verdade -- altere-os diretamente que o Terraform detecta as mudancas.
 - O cluster Kind e gerenciado pelo recurso `null_resource` com `local-exec`; nao ha provider Kind dedicado publicado no Registry.
+- Os manifestos em `../k8s/` (ConfigMap, Deployment, Service, HPA, PVC, StatefulSet) sao aplicados diretamente. Secrets (`oficina-secrets`, `ghcr-secret`) sao gerados inline pelo Terraform para evitar valores sensiveis em disco.
