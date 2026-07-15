@@ -1,14 +1,24 @@
+resource "local_file" "kind_config" {
+  content = templatefile("${path.module}/kind-config.yaml.tpl", {
+    cluster_name       = var.cluster_name
+    kubernetes_version = var.kubernetes_version
+    node_port          = var.node_port
+  })
+  filename = "${path.module}/.kind-config.yaml"
+}
+
 resource "null_resource" "kind_cluster" {
   triggers = {
     cluster_name       = var.cluster_name
     kubernetes_version = var.kubernetes_version
+    node_port          = var.node_port
+    config_hash        = local_file.kind_config.content_md5
   }
 
   provisioner "local-exec" {
     command = <<-EOT
       kind create cluster \
-        --name ${var.cluster_name} \
-        --image kindest/node:${var.kubernetes_version} \
+        --config ${local_file.kind_config.filename} \
         --wait 120s
       kubectl config use-context kind-${var.cluster_name}
     EOT

@@ -16,6 +16,12 @@ variable "kind_node_image" {
   default     = null
 }
 
+variable "node_port" {
+  description = "Porta NodePort a ser exposta no host"
+  type        = number
+  default     = 30080
+}
+
 variable "ghcr_username" {
   description = "Usuario do GitHub Container Registry"
   type        = string
