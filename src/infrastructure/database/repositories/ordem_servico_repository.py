@@ -40,7 +40,15 @@ class SqlAlchemyOrdemServicoRepository(OrdemServicoRepositoryPort):
                 entregue_em=ordem.entregue_em,
             )
             self._session.add(model)
+            self._session.commit()
         else:
+            self._session.query(ItemServicoModel).filter(
+                ItemServicoModel.ordem_servico_id == str(ordem.id)
+            ).delete()
+            self._session.query(ItemPecaModel).filter(
+                ItemPecaModel.ordem_servico_id == str(ordem.id)
+            ).delete()
+
             model.status = ordem.status.name
             model.orcamento_aprovado = ordem.orcamento.aprovado
             model.orcamento_recusado = ordem.orcamento.recusado
@@ -50,12 +58,7 @@ class SqlAlchemyOrdemServicoRepository(OrdemServicoRepositoryPort):
             model.finalizada_em = ordem.finalizada_em
             model.entregue_em = ordem.entregue_em
 
-            self._session.query(ItemServicoModel).filter(
-                ItemServicoModel.ordem_servico_id == str(ordem.id)
-            ).delete()
-            self._session.query(ItemPecaModel).filter(
-                ItemPecaModel.ordem_servico_id == str(ordem.id)
-            ).delete()
+            self._session.commit()
 
         for item in ordem.orcamento.itens_servico:
             self._session.add(
