@@ -11,7 +11,7 @@
         {
             "label": "compose:up",
             "type": "shell",
-            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --wait",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build --wait",
             "group": "build",
             "presentation": {
                 "reveal": "silent",
