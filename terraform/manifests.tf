@@ -210,6 +210,28 @@ resource "null_resource" "k8s_migration_job" {
   depends_on = [null_resource.k8s_postgres_service]
 }
 
+resource "null_resource" "k8s_metrics_server" {
+  triggers = {
+    yaml         = filemd5("${local.k8s_dir}/metrics-server.yaml")
+    k8s_dir      = local.k8s_dir
+    kube_context = local.kube_context
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+      kubectl apply -f ${self.triggers.k8s_dir}/metrics-server.yaml --context=${self.triggers.kube_context}
+      kubectl -n kube-system rollout status deployment metrics-server --timeout=120s --context=${self.triggers.kube_context}
+    EOT
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "kubectl delete -f ${self.triggers.k8s_dir}/metrics-server.yaml --context=${self.triggers.kube_context} --ignore-not-found"
+  }
+
+  depends_on = [null_resource.k8s_namespace]
+}
+
 resource "null_resource" "k8s_deployment" {
   triggers = {
     yaml         = filemd5("${local.k8s_dir}/deployment.yaml")
@@ -270,5 +292,8 @@ resource "null_resource" "k8s_hpa" {
     command = "kubectl delete -f ${self.triggers.k8s_dir}/hpa.yaml --context=${self.triggers.kube_context} --ignore-not-found"
   }
 
-  depends_on = [null_resource.k8s_deployment]
+  depends_on = [
+    null_resource.k8s_deployment,
+    null_resource.k8s_metrics_server,
+  ]
 }
