@@ -70,9 +70,8 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           IMAGE="${ECR_REGISTRY}/application"
-          docker build -t "${IMAGE}:${IMAGE_TAG}" -t "${IMAGE}:latest" .
+          docker build -t "${IMAGE}:${IMAGE_TAG}" .
           docker push "${IMAGE}:${IMAGE_TAG}"
-          docker push "${IMAGE}:latest"
 
   deploy:
     needs: build-and-push
