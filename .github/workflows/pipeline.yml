@@ -108,7 +108,7 @@ jobs:
           terraform init -input=false
           terraform apply -refresh-only -auto-approve
           OUTPUTS=$(terraform output -json)
-          python3 -c 'import sys,json; o=json.loads(sys.stdin.read()); r=["rds_endpoint","rds_port","database_name","database_username","eks_cluster_name","ecr_repository_url","lambda_arn","jwt_secret"]; m=[x for x in r if x not in o]; raise SystemExit("Terraform outputs ausentes no state app: " + ", ".join(m)) if m else None' <<< "$OUTPUTS"
+          python3 -c 'import sys,json; o=json.loads(sys.stdin.read()); r=["rds_endpoint","rds_port","database_name","database_username","eks_cluster_name","ecr_repository_url","lambda_arn","jwt_secret"]; m=[x for x in r if x not in o]; m and sys.exit("Terraform outputs ausentes no state app: " + ", ".join(m))' <<< "$OUTPUTS"
 
           echo "rds_endpoint=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["rds_endpoint"]["value"])')" >> "$GITHUB_OUTPUT"
           echo "rds_port=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["rds_port"]["value"])')" >> "$GITHUB_OUTPUT"
