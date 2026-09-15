@@ -35,10 +35,26 @@ locals {
     }
     type = "Opaque"
     data = {
-      JWT_SECRET    = base64encode("CHANGE-ME-IN-PRODUCTION")
-      DB_PASSWORD   = base64encode("oficina123")
-      SMTP_USER     = base64encode("your-smtp-user@gmail.com")
-      SMTP_PASSWORD = base64encode("your-app-password")
+      JWT_SECRET              = base64encode("CHANGE-ME-IN-PRODUCTION")
+      DATABASE_URL            = base64encode("postgresql://oficina_admin:oficina123@db:5432/oficina")
+      CPF_VALIDATOR_LAMBDA_ARN = base64encode("")
+      SMTP_USER               = base64encode("your-smtp-user@gmail.com")
+      SMTP_PASSWORD           = base64encode("your-app-password")
+    }
+  })
+  service_account_yaml = yamlencode({
+    apiVersion = "v1"
+    kind       = "ServiceAccount"
+    metadata = {
+      name      = "oficina-api"
+      namespace = "oficina"
+      labels = {
+        "app.kubernetes.io/name"        = "oficina"
+        "app.kubernetes.io/component"   = "api"
+      }
+      annotations = {
+        "eks.amazonaws.com/role-arn" = ""
+      }
     }
   })
 }
@@ -119,64 +135,23 @@ resource "null_resource" "k8s_ghcr_secret" {
   depends_on = [null_resource.k8s_namespace]
 }
 
-resource "null_resource" "k8s_postgres_pvc" {
+resource "null_resource" "k8s_service_account" {
   triggers = {
-    yaml         = filemd5("${local.k8s_dir}/postgres-pvc.yaml")
-    k8s_dir      = local.k8s_dir
+    inline       = md5(local.service_account_yaml)
+    yaml_b64     = base64encode(local.service_account_yaml)
     kube_context = local.kube_context
   }
 
   provisioner "local-exec" {
-    command = "kubectl apply -f ${self.triggers.k8s_dir}/postgres-pvc.yaml --context=${self.triggers.kube_context}"
+    command = "echo ${self.triggers.yaml_b64} | base64 -d | kubectl apply -f - --context=${self.triggers.kube_context}"
   }
 
   provisioner "local-exec" {
     when    = destroy
-    command = "kubectl delete -f ${self.triggers.k8s_dir}/postgres-pvc.yaml --context=${self.triggers.kube_context} --ignore-not-found"
+    command = "kubectl delete serviceaccount oficina-api -n oficina --context=${self.triggers.kube_context} --ignore-not-found"
   }
 
   depends_on = [null_resource.k8s_namespace]
-}
-
-resource "null_resource" "k8s_postgres_statefulset" {
-  triggers = {
-    yaml         = filemd5("${local.k8s_dir}/postgres-statefulset.yaml")
-    k8s_dir      = local.k8s_dir
-    kube_context = local.kube_context
-  }
-
-  provisioner "local-exec" {
-    command = "kubectl apply -f ${self.triggers.k8s_dir}/postgres-statefulset.yaml --context=${self.triggers.kube_context}"
-  }
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = "kubectl delete -f ${self.triggers.k8s_dir}/postgres-statefulset.yaml --context=${self.triggers.kube_context} --ignore-not-found"
-  }
-
-  depends_on = [
-    null_resource.k8s_postgres_pvc,
-    null_resource.k8s_secret,
-  ]
-}
-
-resource "null_resource" "k8s_postgres_service" {
-  triggers = {
-    yaml         = filemd5("${local.k8s_dir}/postgres-service.yaml")
-    k8s_dir      = local.k8s_dir
-    kube_context = local.kube_context
-  }
-
-  provisioner "local-exec" {
-    command = "kubectl apply -f ${self.triggers.k8s_dir}/postgres-service.yaml --context=${self.triggers.kube_context}"
-  }
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = "kubectl delete -f ${self.triggers.k8s_dir}/postgres-service.yaml --context=${self.triggers.kube_context} --ignore-not-found"
-  }
-
-  depends_on = [null_resource.k8s_postgres_statefulset]
 }
 
 resource "null_resource" "k8s_migration_job" {
@@ -188,10 +163,10 @@ resource "null_resource" "k8s_migration_job" {
 
   provisioner "local-exec" {
     command = <<EOT
-      echo "Aguardando pod postgres ficar Ready..."
+      echo "Aguardando pod de banco ficar Ready..."
       kubectl wait --for=condition=ready --timeout=60s pod \
-        -n oficina -l app.kubernetes.io/component=postgres \
-        --context=${self.triggers.kube_context}
+        -n oficina -l app.kubernetes.io/component=db \
+        --context=${self.triggers.kube_context} || true
       kubectl delete job alembic-migrations -n oficina --ignore-not-found \
         --context=${self.triggers.kube_context}
       kubectl apply -f ${self.triggers.k8s_dir}/migration-job.yaml \
@@ -204,10 +179,10 @@ resource "null_resource" "k8s_migration_job" {
 
   provisioner "local-exec" {
     when    = destroy
-    command = "kubectl delete job alembic-migrations -n oficina --context=${self.triggers.kube_context} --ignore-not-found"
+    command = "kubectl delete job alembic-migrations -n oficina --ignore-not-found --context=${self.triggers.kube_context}"
   }
 
-  depends_on = [null_resource.k8s_postgres_service]
+  depends_on = [null_resource.k8s_secret, null_resource.k8s_service_account]
 }
 
 resource "null_resource" "k8s_metrics_server" {
@@ -252,7 +227,7 @@ resource "null_resource" "k8s_deployment" {
     null_resource.k8s_configmap,
     null_resource.k8s_secret,
     null_resource.k8s_ghcr_secret,
-    null_resource.k8s_postgres_statefulset,
+    null_resource.k8s_service_account,
     null_resource.k8s_migration_job,
   ]
 }

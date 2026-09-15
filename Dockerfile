@@ -1,32 +1,17 @@
-FROM python:3.12-slim AS builder
-
-ENV POETRY_VERSION=2.3.2 \
-    POETRY_HOME=/opt/poetry \
-    POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_NO_INTERACTION=1
-
-RUN pip install "poetry==$POETRY_VERSION"
-
-WORKDIR /app
-
-COPY pyproject.toml poetry.lock ./
-COPY src/ ./src/
-COPY alembic.ini ./
-COPY migrations/ ./migrations/
-
-RUN poetry install --no-root
-
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim AS production
 
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
-COPY --from=builder /usr/local/bin/ /usr/local/bin/
-COPY --from=builder /app/src/ ./src/
-COPY --from=builder /app/alembic.ini ./
-COPY --from=builder /app/migrations/ ./migrations/
+COPY pyproject.toml poetry.lock ./
+
+RUN python -m pip install --no-cache-dir --upgrade pip && \
+    python -m pip install --no-cache-dir poetry==2.3.2 && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-root --no-interaction
+
+COPY src/ ./src/
 
 RUN mkdir -p /app/data && chown -R appuser:appuser /app
 

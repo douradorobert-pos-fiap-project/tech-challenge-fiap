@@ -7,12 +7,10 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
 
     DATABASE_URL: str = "sqlite:///./data/oficina.db"
+    CPF_VALIDATOR_LAMBDA_ARN: str = ""
+    AWS_REGION: str = "us-east-1"
 
-    POSTGRES_DB: str = "oficina"
-    POSTGRES_USER: str = "oficina"
-    POSTGRES_PASSWORD: str = "oficina123"
-
-    JWT_SECRET: str = "secret-key-change-in-production"
+    JWT_SECRET: str = "dev-secret-key-change-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_MINUTES: int = 60
 

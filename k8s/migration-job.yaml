@@ -13,6 +13,7 @@ spec:
   template:
     spec:
       restartPolicy: Never
+      serviceAccountName: oficina-api
       imagePullSecrets:
         - name: ghcr-secret
       containers:
@@ -24,14 +25,25 @@ spec:
                 name: oficina-config
             - secretRef:
                 name: oficina-secrets
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-secrets
+                  key: DATABASE_URL
+            - name: CPF_VALIDATOR_LAMBDA_ARN
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-secrets
+                  key: CPF_VALIDATOR_LAMBDA_ARN
           command:
             - sh
             - -c
             - |
-              echo "Aguardando postgres..."
+              echo "Aguardando conectividade com o banco..."
               for i in $(seq 1 30); do
                 python -c "import psycopg2,os; psycopg2.connect(os.environ['DATABASE_URL'])" 2>/dev/null \
-                  && echo "Postgres pronto!" && break
+                  && echo "Banco pronto!" && break
                 echo "Tentativa $i/30 - aguardando 2s..."
                 sleep 2
               done

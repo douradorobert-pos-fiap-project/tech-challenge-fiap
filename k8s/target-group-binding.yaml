@@ -1,0 +1,26 @@
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: oficina-api-tgb
+  namespace: oficina
+spec:
+  serviceRef:
+    name: oficina-api
+    port: 80
+  targetGroupARN: TARGET_GROUP_ARN_PLACEHOLDER
+  targetType: ip
+  networking:
+    ingress:
+      - from:
+          - securityGroup:
+              groupID: SECURITY_GROUP_PLACEHOLDER
+        ports:
+          - protocol: TCP
+            port: 80
+    egress:
+      - to:
+          - securityGroup:
+              groupID: SECURITY_GROUP_PLACEHOLDER
+        ports:
+          - protocol: TCP
+            port: 80

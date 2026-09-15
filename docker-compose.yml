@@ -5,22 +5,23 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      - ./data:/app/data
     environment:
+      - APP_ENV=production
+      - DATABASE_URL=postgresql://oficina_admin:${DB_PASSWORD}@${DB_HOST}:5432/oficina
+      - CPF_VALIDATOR_LAMBDA_ARN=${CPF_VALIDATOR_LAMBDA_ARN}
       - JWT_SECRET=${JWT_SECRET}
-      - APP_ENV=${APP_ENV}
-      - DATABASE_URL=${DATABASE_URL}
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRATION_MINUTES=60
+    restart: unless-stopped
     depends_on:
       - db
-    restart: unless-stopped
 
   db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=oficina
+      - POSTGRES_USER=oficina_admin
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:

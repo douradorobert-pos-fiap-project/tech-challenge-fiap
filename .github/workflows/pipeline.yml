@@ -52,33 +52,26 @@ jobs:
       - name: Checkout do repositório
         uses: actions/checkout@v4
 
-      - name: Configurar Python
-        uses: actions/setup-python@v5
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          python-version: "3.12"
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
 
-      - name: Instalar Poetry
-        run: pip install poetry
-
-      - name: Configurar Poetry
-        run: poetry config virtualenvs.create false
-
-      - name: Instalar dependências
-        run: poetry install --no-interaction
-
-      - name: Login no GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ secrets.GHCR_USERNAME }}
-          password: ${{ secrets.GHCR_PAT }}
+      - name: Login no ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build e push da imagem
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          IMAGE="ghcr.io/${{ secrets.GHCR_USERNAME }}/tech-challenge-fiap/tech-challenge-app"
-          TAG="${{ github.sha }}"
-          docker build -t "${IMAGE}:${TAG}" -t "${IMAGE}:latest" .
-          docker push "${IMAGE}:${TAG}"
+          IMAGE="${ECR_REGISTRY}/application"
+          docker build -t "${IMAGE}:${IMAGE_TAG}" -t "${IMAGE}:latest" .
+          docker push "${IMAGE}:${IMAGE_TAG}"
           docker push "${IMAGE}:latest"
 
   deploy:
@@ -92,39 +85,121 @@ jobs:
       - name: Checkout do repositório
         uses: actions/checkout@v4
 
-      - name: Login no GHCR
-        uses: docker/login-action@v3
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          registry: ghcr.io
-          username: ${{ secrets.GHCR_USERNAME }}
-          password: ${{ secrets.GHCR_PAT }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Login no ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Configurar kubectl
+        run: |
+          aws eks update-kubeconfig --name sandbox-eks --region us-east-1
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.8"
+
+      - name: Ler infraestrutura via Terraform
+        id: infra
+        working-directory: terraform/infra
+        run: |
+          terraform init -input=false
+          OUTPUTS=$(terraform output -json)
+
+          echo "rds_endpoint=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["rds_endpoint"]["value"])')" >> "$GITHUB_OUTPUT"
+          echo "rds_port=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["rds_port"]["value"])')" >> "$GITHUB_OUTPUT"
+          echo "database_name=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["database_name"]["value"])')" >> "$GITHUB_OUTPUT"
+          echo "database_username=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["database_username"]["value"])')" >> "$GITHUB_OUTPUT"
+          echo "eks_cluster_name=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["eks_cluster_name"]["value"])')" >> "$GITHUB_OUTPUT"
+          echo "ecr_repository_url=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["ecr_repository_url"]["value"])')" >> "$GITHUB_OUTPUT"
+          echo "lambda_arn=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["lambda_arn"]["value"])')" >> "$GITHUB_OUTPUT"
+          echo "eks_node_role_arn=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["eks_node_role_arn"]["value"])')" >> "$GITHUB_OUTPUT"
+          echo "jwt_secret=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["jwt_secret"]["value"])')" >> "$GITHUB_OUTPUT"
+
+      - name: Buscar valores derivados via AWS CLI
+        id: derived
+        run: |
+          TG_ARN=$(aws elbv2 describe-target-groups \
+            --names sandbox-app-tg \
+            --query 'TargetGroups[0].TargetGroupArn' \
+            --output text 2>/dev/null || echo "")
+
+          SG_ID=$(aws ec2 describe-security-groups \
+            --filters "Name=group-name,Values=sandbox-vpclink-*" \
+            --query 'SecurityGroups[0].GroupId' \
+            --output text 2>/dev/null || echo "")
+
+          echo "target_group_arn=${TG_ARN}" >> "$GITHUB_OUTPUT"
+          echo "vpc_link_sg_id=${SG_ID}" >> "$GITHUB_OUTPUT"
 
       - name: Atualizar tag da imagem nos manifestos
         run: |
-          IMAGE="ghcr.io/${{ secrets.GHCR_USERNAME }}/tech-challenge-fiap/tech-challenge-app"
-          TAG="${{ github.sha }}"
-          sed -i "s|image: ghcr.io/.*/tech-challenge-app:.*|image: ${IMAGE}:${TAG}|" k8s/deployment.yaml
-          sed -i "s|image: ghcr.io/.*/tech-challenge-app:.*|image: ${IMAGE}:${TAG}|" k8s/migration-job.yaml
+          ECR_REPO="${{ steps.infra.outputs.ecr_repository_url }}"
+          IMAGE_TAG="${{ github.sha }}"
+          sed -i "s|image: ghcr.io/.*/tech-challenge-app:.*|image: ${ECR_REPO}:${IMAGE_TAG}|" k8s/deployment.yaml
+          sed -i "s|image: ghcr.io/.*/tech-challenge-app:.*|image: ${ECR_REPO}:${IMAGE_TAG}|" k8s/migration-job.yaml
 
-      - name: Instalar Kind
-        uses: helm/kind-action@v1
-        with:
-          cluster_name: tech-challenge
-          wait: 120s
-
-      - name: Instalar Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.10.5"
-
-      - name: Terraform init e apply
-        working-directory: terraform
+      - name: Criar secrets do Kubernetes
         env:
-          TF_VAR_ghcr_username: ${{ secrets.GHCR_USERNAME }}
-          TF_VAR_ghcr_pat: ${{ secrets.GHCR_PAT }}
+          DB_HOST: ${{ steps.infra.outputs.rds_endpoint }}
+          DB_USERNAME: ${{ steps.infra.outputs.database_username }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          LAMBDA_ARN: ${{ steps.infra.outputs.lambda_arn }}
+          JWT_SECRET: ${{ steps.infra.outputs.jwt_secret }}
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
         run: |
-          terraform init
-          terraform apply -auto-approve
+          DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:5432/oficina"
+
+          kubectl create namespace oficina --dry-run=client -o yaml | kubectl apply -f -
+
+          kubectl create secret generic oficina-secrets \
+            --namespace oficina \
+            --from-literal=JWT_SECRET="${JWT_SECRET}" \
+            --from-literal=DATABASE_URL="${DATABASE_URL}" \
+            --from-literal=CPF_VALIDATOR_LAMBDA_ARN="${LAMBDA_ARN}" \
+            --from-literal=SMTP_USER="${{ secrets.SMTP_USER }}" \
+            --from-literal=SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          kubectl create secret generic ghcr-secret \
+            --namespace oficina \
+            --type=kubernetes.io/dockerconfigjson \
+            --from-literal=.dockerconfigjson='{"auths":{"'${ECR_REGISTRY}'":{"auth":"'$(echo -n "${{ secrets.AWS_ACCESS_KEY_ID }}:${{ secrets.AWS_SECRET_ACCESS_KEY }}" | base64)'"}}}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Atualizar TargetGroupBinding
+        env:
+          TG_ARN: ${{ steps.derived.outputs.target_group_arn }}
+          SG_ID: ${{ steps.derived.outputs.vpc_link_sg_id }}
+        run: |
+          sed -i "s|TARGET_GROUP_ARN_PLACEHOLDER|${TG_ARN}|" k8s/target-group-binding.yaml
+          sed -i "s|SECURITY_GROUP_PLACEHOLDER|${SG_ID}|" k8s/target-group-binding.yaml
+
+      - name: Atualizar ServiceAccount IAM Role
+        env:
+          ROLE_ARN: ${{ steps.infra.outputs.eks_node_role_arn }}
+        run: |
+          sed -i "s|PLACEHOLDER_IAM_ROLE_ARN|${ROLE_ARN}|" k8s/service-account.yaml
+
+      - name: Aplicar manifests no EKS
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/service-account.yaml
+          kubectl apply -f k8s/target-group-binding.yaml
+          kubectl apply -f k8s/migration-job.yaml
+          kubectl wait --for=condition=complete job/alembic-migrations \
+            -n oficina --timeout=180s
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/hpa.yaml
 
       - name: Aguardar rollout do deployment
         run: |
