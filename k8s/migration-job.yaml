@@ -15,7 +15,7 @@ spec:
       restartPolicy: Never
       serviceAccountName: oficina-api
       imagePullSecrets:
-        - name: ghcr-secret
+        - name: ecr-secret
       containers:
         - name: alembic
           image: ghcr.io/douradorobert/tech-challenge-fiap/tech-challenge-app:latest
@@ -41,11 +41,16 @@ spec:
             - -c
             - |
               echo "Aguardando conectividade com o banco..."
+              DB_READY=false
               for i in $(seq 1 30); do
                 python -c "import psycopg2,os; psycopg2.connect(os.environ['DATABASE_URL'])" 2>/dev/null \
-                  && echo "Banco pronto!" && break
+                  && DB_READY=true && echo "Banco pronto!" && break
                 echo "Tentativa $i/30 - aguardando 2s..."
                 sleep 2
               done
+              if [ "${DB_READY}" != "true" ]; then
+                echo "Não foi possível conectar ao banco após 30 tentativas."
+                exit 1
+              fi
               echo "Rodando migrations..."
               alembic -c /app/alembic.ini upgrade head

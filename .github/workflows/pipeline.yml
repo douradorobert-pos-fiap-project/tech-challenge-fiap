@@ -96,10 +96,6 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Configurar kubectl
-        run: |
-          aws eks update-kubeconfig --name sandbox-eks --region us-east-1
-
       - name: Configurar Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -110,7 +106,9 @@ jobs:
         working-directory: terraform/infra
         run: |
           terraform init -input=false
+          terraform apply -refresh-only -auto-approve
           OUTPUTS=$(terraform output -json)
+          python3 -c 'import sys,json; o=json.loads(sys.stdin.read()); r=["rds_endpoint","rds_port","database_name","database_username","eks_cluster_name","ecr_repository_url","lambda_arn","jwt_secret"]; m=[x for x in r if x not in o]; raise SystemExit("Terraform outputs ausentes no state app: " + ", ".join(m)) if m else None' <<< "$OUTPUTS"
 
           echo "rds_endpoint=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["rds_endpoint"]["value"])')" >> "$GITHUB_OUTPUT"
           echo "rds_port=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["rds_port"]["value"])')" >> "$GITHUB_OUTPUT"
@@ -120,6 +118,12 @@ jobs:
           echo "ecr_repository_url=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["ecr_repository_url"]["value"])')" >> "$GITHUB_OUTPUT"
           echo "lambda_arn=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["lambda_arn"]["value"])')" >> "$GITHUB_OUTPUT"
           echo "jwt_secret=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["jwt_secret"]["value"])')" >> "$GITHUB_OUTPUT"
+
+      - name: Configurar kubectl
+        env:
+          EKS_CLUSTER_NAME: ${{ steps.infra.outputs.eks_cluster_name }}
+        run: |
+          aws eks update-kubeconfig --name "${EKS_CLUSTER_NAME}" --region us-east-1
 
       - name: Buscar valores derivados via AWS CLI
         id: derived
@@ -147,13 +151,15 @@ jobs:
       - name: Criar secrets do Kubernetes
         env:
           DB_HOST: ${{ steps.infra.outputs.rds_endpoint }}
+          DB_PORT: ${{ steps.infra.outputs.rds_port }}
+          DB_NAME: ${{ steps.infra.outputs.database_name }}
           DB_USERNAME: ${{ steps.infra.outputs.database_username }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           LAMBDA_ARN: ${{ steps.infra.outputs.lambda_arn }}
           JWT_SECRET: ${{ steps.infra.outputs.jwt_secret }}
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
         run: |
-          DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:5432/oficina"
+          DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
           kubectl create namespace oficina --dry-run=client -o yaml | kubectl apply -f -
 
@@ -166,10 +172,12 @@ jobs:
             --from-literal=SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          kubectl create secret generic ghcr-secret \
+          ECR_PASSWORD=$(aws ecr get-login-password --region us-east-1)
+          kubectl create secret docker-registry ecr-secret \
             --namespace oficina \
-            --type=kubernetes.io/dockerconfigjson \
-            --from-literal=.dockerconfigjson='{"auths":{"'${ECR_REGISTRY}'":{"auth":"'$(echo -n "${{ secrets.AWS_ACCESS_KEY_ID }}:${{ secrets.AWS_SECRET_ACCESS_KEY }}" | base64 -w 0)'"}}}' \
+            --docker-server="${ECR_REGISTRY}" \
+            --docker-username=AWS \
+            --docker-password="${ECR_PASSWORD}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Atualizar TargetGroupBinding
