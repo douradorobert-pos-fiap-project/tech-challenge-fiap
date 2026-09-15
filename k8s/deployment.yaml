@@ -20,7 +20,7 @@ spec:
     spec:
       serviceAccountName: oficina-api
       imagePullSecrets:
-        - name: ghcr-secret
+        - name: ecr-secret
       containers:
         - name: api
           image: ghcr.io/douradorobert/tech-challenge-fiap/tech-challenge-app:latest
