@@ -9,18 +9,4 @@ spec:
     port: 80
   targetGroupARN: TARGET_GROUP_ARN_PLACEHOLDER
   targetType: ip
-  networking:
-    ingress:
-      - from:
-          - securityGroup:
-              groupID: SECURITY_GROUP_PLACEHOLDER
-        ports:
-          - protocol: TCP
-            port: 80
-    egress:
-      - to:
-          - securityGroup:
-              groupID: SECURITY_GROUP_PLACEHOLDER
-        ports:
-          - protocol: TCP
-            port: 80
+
