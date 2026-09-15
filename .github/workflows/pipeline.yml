@@ -119,7 +119,6 @@ jobs:
           echo "eks_cluster_name=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["eks_cluster_name"]["value"])')" >> "$GITHUB_OUTPUT"
           echo "ecr_repository_url=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["ecr_repository_url"]["value"])')" >> "$GITHUB_OUTPUT"
           echo "lambda_arn=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["lambda_arn"]["value"])')" >> "$GITHUB_OUTPUT"
-          echo "eks_node_role_arn=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["eks_node_role_arn"]["value"])')" >> "$GITHUB_OUTPUT"
           echo "jwt_secret=$(echo $OUTPUTS | python3 -c 'import sys,json; print(json.load(sys.stdin)["jwt_secret"]["value"])')" >> "$GITHUB_OUTPUT"
 
       - name: Buscar valores derivados via AWS CLI
@@ -181,23 +180,45 @@ jobs:
           sed -i "s|TARGET_GROUP_ARN_PLACEHOLDER|${TG_ARN}|" k8s/target-group-binding.yaml
           sed -i "s|SECURITY_GROUP_PLACEHOLDER|${SG_ID}|" k8s/target-group-binding.yaml
 
-      - name: Atualizar ServiceAccount IAM Role
-        env:
-          ROLE_ARN: ${{ steps.infra.outputs.eks_node_role_arn }}
+      - name: Validar AWS Load Balancer Controller
         run: |
-          sed -i "s|PLACEHOLDER_IAM_ROLE_ARN|${ROLE_ARN}|" k8s/service-account.yaml
+          kubectl -n kube-system rollout status \
+            deployment/aws-load-balancer-controller --timeout=120s
+
+          CONTROLLER_SA=$(kubectl -n kube-system get serviceaccount \
+            aws-load-balancer-controller \
+            -o jsonpath='{.metadata.name}' 2>/dev/null || true)
+
+          if [ -z "${CONTROLLER_SA}" ]; then
+            echo "AWS Load Balancer Controller não está instalado no cluster"
+            exit 1
+          fi
+
+          CONTROLLER_ROLE=$(kubectl -n kube-system get serviceaccount \
+            aws-load-balancer-controller \
+            -o jsonpath='{.metadata.annotations.eks\\.amazonaws\\.com/role-arn}' \
+            2>/dev/null || true)
+
+          if [ -n "${CONTROLLER_ROLE}" ]; then
+            echo "O controller possui uma role IRSA configurada: ${CONTROLLER_ROLE}"
+            echo "Remova a annotation IRSA ou configure uma role válida antes do deploy."
+            exit 1
+          fi
+
+          echo "AWS Load Balancer Controller disponível: ${CONTROLLER_SA}"
+          echo "O controller deve obter credenciais pela role dos nodes via IMDS."
 
       - name: Aplicar manifests no EKS
         run: |
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
           kubectl apply -f k8s/service-account.yaml
-          kubectl apply -f k8s/target-group-binding.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/migration-job.yaml
           kubectl wait --for=condition=complete job/alembic-migrations \
             -n oficina --timeout=180s
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/target-group-binding.yaml
           kubectl apply -f k8s/hpa.yaml
 
       - name: Aguardar rollout do deployment
