@@ -9,7 +9,7 @@ metadata:
 spec:
   ttlSecondsAfterFinished: 120
   backoffLimit: 3
-  activeDeadlineSeconds: 180
+  activeDeadlineSeconds: 300
   template:
     spec:
       restartPolicy: Never
@@ -43,7 +43,7 @@ spec:
               echo "Aguardando conectividade com o banco..."
               DB_READY=false
               for i in $(seq 1 30); do
-                python -c "import psycopg2,os; psycopg2.connect(os.environ['DATABASE_URL'])" 2>/dev/null \
+                python -c "import psycopg2,os; psycopg2.connect(os.environ['DATABASE_URL'], connect_timeout=5)" \
                   && DB_READY=true && echo "Banco pronto!" && break
                 echo "Tentativa $i/30 - aguardando 2s..."
                 sleep 2

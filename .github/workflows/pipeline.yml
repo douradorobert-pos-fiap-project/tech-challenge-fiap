@@ -156,10 +156,11 @@ jobs:
           DB_USERNAME: ${{ steps.infra.outputs.database_username }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           LAMBDA_ARN: ${{ steps.infra.outputs.lambda_arn }}
-          JWT_SECRET: ${{ steps.infra.outputs.jwt_secret }}
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
         run: |
-          DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+          JWT_SECRET=$(terraform -chdir=terraform/infra output -raw jwt_secret)
+          echo "::add-mask::${JWT_SECRET}"
+          DATABASE_URL=$(python3 -c 'import os; from urllib.parse import quote; keys=("DB_USERNAME","DB_PASSWORD","DB_HOST","DB_PORT","DB_NAME"); print("postgresql://{}:{}@{}:{}/{}".format(*(quote(os.environ[k], safe="") for k in keys)))')
 
           kubectl create namespace oficina --dry-run=client -o yaml | kubectl apply -f -
 
@@ -225,9 +226,17 @@ jobs:
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/migration-job.yaml
           kubectl wait --for=condition=complete job/alembic-migrations \
-            -n oficina --timeout=180s
+            -n oficina --timeout=360s
           kubectl apply -f k8s/target-group-binding.yaml
           kubectl apply -f k8s/hpa.yaml
+
+      - name: Diagnosticar falha da migração
+        if: failure()
+        run: |
+          kubectl get job alembic-migrations -n oficina -o yaml || true
+          kubectl get pods -n oficina -l job-name=alembic-migrations -o wide || true
+          kubectl describe pods -n oficina -l job-name=alembic-migrations || true
+          kubectl logs -n oficina -l job-name=alembic-migrations --all-containers --prefix=true || true
 
       - name: Aguardar rollout do deployment
         run: |
