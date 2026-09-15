@@ -12,6 +12,8 @@ RUN python -m pip install --no-cache-dir --upgrade pip && \
     poetry install --no-root --no-interaction
 
 COPY src/ ./src/
+COPY alembic.ini ./
+COPY migrations/ ./migrations/
 
 RUN mkdir -p /app/data && chown -R appuser:appuser /app
 
