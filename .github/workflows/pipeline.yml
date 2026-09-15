@@ -225,8 +225,25 @@ jobs:
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/migration-job.yaml
-          kubectl wait --for=condition=complete job/alembic-migrations \
-            -n oficina --timeout=360s
+          for i in $(seq 1 360); do
+            COMPLETE=$(kubectl get job alembic-migrations -n oficina -o jsonpath="{.status.conditions[?(@.type==\"Complete\")].status}" 2>/dev/null || true)
+            FAILED=$(kubectl get job alembic-migrations -n oficina -o jsonpath="{.status.conditions[?(@.type==\"Failed\")].status}" 2>/dev/null || true)
+            if [ "${COMPLETE}" = "True" ]; then
+              break
+            fi
+            if [ "${FAILED}" = "True" ]; then
+              echo "O Job de migração falhou."
+              kubectl describe job alembic-migrations -n oficina || true
+              kubectl get pods -n oficina -l job-name=alembic-migrations -o wide || true
+              kubectl logs -n oficina -l job-name=alembic-migrations --all-containers --prefix=true || true
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "${COMPLETE}" != "True" ]; then
+            echo "Timeout aguardando o Job de migração."
+            exit 1
+          fi
           kubectl apply -f k8s/target-group-binding.yaml
           kubectl apply -f k8s/hpa.yaml
 
@@ -234,6 +251,7 @@ jobs:
         if: failure()
         run: |
           kubectl get job alembic-migrations -n oficina -o yaml || true
+          kubectl describe job alembic-migrations -n oficina || true
           kubectl get pods -n oficina -l job-name=alembic-migrations -o wide || true
           kubectl describe pods -n oficina -l job-name=alembic-migrations || true
           kubectl logs -n oficina -l job-name=alembic-migrations --all-containers --prefix=true || true
