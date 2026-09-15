@@ -20,3 +20,6 @@ terraform/terraform.tfstate*
 terraform/*.backup
 terraform/credentials*
 terraform/*.auto.tfvars
+terraform/infra/.terraform/
+terraform/infra/.terraform.lock.hcl
+terraform/infra/terraform.tfstate*

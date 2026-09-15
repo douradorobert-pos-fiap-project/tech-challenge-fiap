@@ -12,16 +12,29 @@ from src.domain.entities.cliente import Cliente
 from src.domain.exceptions.domain_exceptions import ClienteNaoEncontradoError
 from src.domain.value_objects.cpf_cnpj import CpfCnpj
 from src.domain.value_objects.email import Email
+from src.infrastructure.adapters.cpf_validator_adapter import CpfValidatorAdapter
 
 
 class CreateClienteUseCase:
     def __init__(self, repository: ClienteRepositoryPort) -> None:
         self._repository = repository
+        self._cpf_validator = CpfValidatorAdapter()
 
     def execute(self, dto: CreateClienteDTO) -> ClienteResponseDTO:
+        cpf_value = CpfCnpj(dto.cpf_cnpj)
+
+        # Validate CPF using the Lambda function (production validation)
+        # In local development without Lambda ARN configured, falls back to
+        # the local CpfCnpj constructor validation
+        cpf_valid = self._cpf_validator.validate_cpf(cpf_value.valor)
+        if not cpf_valid:
+            from src.domain.exceptions.domain_exceptions import CPFInvalidoError
+
+            raise CPFInvalidoError(cpf_value.valor)
+
         cliente = Cliente(
             nome=dto.nome,
-            cpf_cnpj=CpfCnpj(dto.cpf_cnpj),
+            cpf_cnpj=cpf_value,
             email=Email(dto.email),
             telefone=dto.telefone,
         )

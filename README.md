@@ -9,14 +9,14 @@ Sistema back-end para gestao de ordens de servico, clientes e pecas de oficina m
 | Linguagem | Python 3.12+ |
 | Framework | FastAPI |
 | Gerenciamento de deps | Poetry |
-| Banco dev | SQLite |
-| Banco prod | PostgreSQL |
+| Banco prod | PostgreSQL RDS (AWS) |
 | Testes | Pytest + pytest-cov + pytest-mock |
 | Auth | JWT (bcrypt + python-jose) |
-| Container | Docker + docker-compose |
-| Orquestracao | Kubernetes (Kind) |
+| Container | Docker |
+| Orquestracao | Kubernetes (EKS) |
 | IaC | Terraform |
 | CI/CD | GitHub Actions |
+| Lambda | CPF Validator (AWS Lambda) |
 
 ## Arquitetura Hexagonal (Ports & Adapters)
 
@@ -25,168 +25,181 @@ Domain (puro, sem deps técnicas)
   ↓
 Application (use cases + ports)
   ↓
-Infrastructure (adapters: DB, auth, email)
+Infrastructure (adapters: DB, auth, email, Lambda)
   ↓
 API (FastAPI routes - adapter de entrada)
 ```
 
-- **Domain**: Entidades, Value Objects, servicos de dominio, excecoes
-- **Application**: Casos de uso, DTOs, Ports (interfaces)
-- **Infrastructure**: Repositorios SQLAlchemy, JWT handler, email adapter
-- **API**: Rotas FastAPI, middleware, composition root
+## Execução Local
+
+### Pré-requisitos
+
+- Python 3.12+
+- Poetry
+- Docker e docker-compose
+- AWS CLI (para deploy)
+
+### Configuração
+
+1. Copie o arquivo `.env.example` para `.env` e ajuste as variáveis:
+
+```bash
+cp .env.example .env
+```
+
+2. As variáveis essenciais são:
+
+```env
+DATABASE_URL=postgresql://oficina_admin:oficina123@localhost:5432/oficina
+JWT_SECRET=sua-chave-secreta
+CPF_VALIDATOR_LAMBDA_ARN=arn:aws:lambda:us-east-1:SEU_ACCOUNT:function:CpfValidatorTest
+```
+
+### Desenvolvimento
+
+Para rodar localmente com docker-compose (banco local):
+
+```bash
+docker-compose -f docker-compose.dev.yml up --build
+```
+
+A API estará disponível em `http://localhost:8000/docs`
+
+### Testes
+
+```bash
+poetry install
+poetry run pytest
+```
+
+### Build da Imagem
+
+```bash
+docker build -t tech-challenge-app .
+```
+
+## Deploy na AWS
+
+### Infraestrutura
+
+O deploy utiliza infraestrutura já provisionada:
+
+- **EKS Cluster**: `sandbox-eks` (via `shared-infra`)
+- **RDS PostgreSQL**: `sandbox-oficina-postgresql` (via `database-infra`)
+- **Lambda CPF Validator**: `CpfValidatorTest` (via `tech-challenge-fiap-lambda`)
+- **ECR**: `application` (via `shared-infra`)
+- **API Gateway + NLB**: (via `shared-infra`)
+
+### Pipeline CI/CD
+
+O pipeline GitHub Actions executa:
+
+1. **Validate**: Lint (black, isort) + testes pytest com cobertura
+2. **Build and Push**: Build da imagem Docker + push para ECR
+3. **Deploy**: Atualização dos manifests K8s + deploy no EKS
+
+### Variáveis Necessárias no GitHub Actions
+
+O pipeline lê a maior parte dos valores diretamente do **terraform state** no S3 e do **Secrets Manager**, minimizando a configuração manual.
+
+**Secrets** (Settings → Secrets and variables → Actions → Secrets):
+
+| Secret | Descrição |
+|--------|-----------|
+| `AWS_ACCESS_KEY_ID` | Access key da conta AWS |
+| `AWS_SECRET_ACCESS_KEY` | Secret access key |
+| `AWS_SESSION_TOKEN` | Token da sessão temporária |
+| `DB_PASSWORD` | Senha do PostgreSQL RDS |
+| `SMTP_USER` | Usuário SMTP (opcional) |
+| `SMTP_PASSWORD` | Senha SMTP (opcional) |
+
+**Valores lidos automaticamente pelo pipeline:**
+
+| Valor | Fonte |
+|-------|-------|
+| `rds_endpoint`, `database_username`, `database_name` | Terraform state do `database-infra` |
+| `eks_cluster_name`, `ecr_repository_url`, `lambda_arn`, `eks_node_role_arn` | Terraform state do `shared-infra` |
+| `target_group_arn` | AWS CLI (ELBv2) |
+| `vpc_link_sg_id` | AWS CLI (EC2) |
+| `jwt_secret` | AWS Secrets Manager (`sandbox/jwt-secret`) |
+
+### Permissões IAM
+
+A IAM Role utilizada pelos pods EKS precisa da seguinte permissão:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "lambda:InvokeFunction",
+      "Resource": "arn:aws:lambda:us-east-1:*:function:CpfValidatorTest"
+    }
+  ]
+}
+```
 
 ## Estrutura do Projeto
 
 ```
 src/
-├── domain/           # Entidades, VOs, servicos de dominio
-├── application/      # Use cases, DTOs, Ports
-├── infrastructure/   # Repositorios, auth, config, adapters
-├── api/              # Rotas FastAPI, dependencies
-├── migrations/       # Alembic migrations
-└── alembic.ini       # Configuracao do Alembic
-tests/
-├── unit/             # Testes do dominio e aplicacao
-└── integration/      # Testes da API
-k8s/                  # Manifestos Kubernetes
-terraform/            # Infraestrutura como Codigo
-.github/workflows/    # CI/CD
-docker/               # Dockerfile
+├── api/                    # FastAPI routes (adapter de entrada)
+│   ├── main.py            # App FastAPI
+│   ├── routes/            # Rotas HTTP
+│   └── dependencies.py    # Injeção de dependências
+├── application/           # Casos de uso + ports
+│   ├── dtos/              # Data Transfer Objects
+│   ├── ports/             # Interfaces (repositórios, externo)
+│   └── usecases/          # Lógica de negócio
+├── domain/                # Entidades e regras de negócio
+│   ├── entities/          # Modelos de domínio
+│   ├── exceptions/        # Exceções de domínio
+│   ├── services/          # Serviços de domínio
+│   └── value_objects/     # Objetos de valor (CPF, Email, etc)
+└── infrastructure/        # Implementações técnicas
+    ├── adapters/          # Adaptadores (email, Lambda CPF)
+    ├── auth/              # JWT handler
+    ├── config/            # Settings (pydantic-settings)
+    └── database/          # SQLAlchemy models e repositories
+
+k8s/                       # Manifests Kubernetes
+├── namespace.yaml
+├── configmap.yaml
+├── secret.yaml
+├── deployment.yaml
+├── service.yaml
+├── service-account.yaml
+├── hpa.yaml
+├── migration-job.yaml
+└── target-group-binding.yaml
 ```
 
-## Como Executar Localmente
+## Dependências dos Repositórios de Infraestrutura
 
-### Opcao 1: Poetry (desenvolvimento)
+Este repositório depende de recursos já provisionados:
 
-```bash
-# Instalar dependencias
-poetry install
+1. **shared-infra**: EKS cluster, ECR, NLB, API Gateway, Secrets Manager (JWT)
+2. **database-infra**: PostgreSQL RDS
+3. **tech-challenge-fiap-lambda**: Lambda CPF Validator
 
-# Copiar .env
-cp .env.example .env
+### Terraform State no S3
 
-# Executar migracoes do banco
-poetry run alembic upgrade head
+O pipeline lê os outputs dos estados do Terraform salvos no S3:
 
-# Executar aplicacao
-poetry run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
+| Bucket | Key | Outputs utilizados |
+|--------|-----|-------------------|
+| `terraform-state-264040538379-us-east-1` | `sandbox/terraform.tfstate` | `eks_cluster_name`, `ecr_application_repository_url`, `lambda_arn`, `eks_node_role_arn` |
+| `terraform-state-264040538379-us-east-1` | `database/terraform.tfstate` | `rds_endpoint`, `rds_port`, `database_name`, `database_username` |
 
-# Acessar documentacao Swagger
-# http://localhost:8000/docs
-```
+### Recursos AWS acessados via CLI
 
-### Opcao 2: Docker Compose
+| Recurso | Método AWS CLI |
+|---------|---------------|
+| NLB Target Group | `aws elbv2 describe-target-groups --names sandbox-app-tg` |
+| VPC Link Security Group | `aws ec2 describe-security-groups --filters "Name=group-name,Values=sandbox-vpclink-*"` |
+| JWT Secret | `aws secretsmanager get-secret-value --secret-id sandbox/jwt-secret` |
 
-```bash
-# Build e execução
-docker compose up --build
+## Documentação Adicional
 
-# Executar migracoes do banco (uma vez)
-docker compose run --rm app alembic -c /app/alembic.ini upgrade head
-
-# Acessar: http://localhost:8000/docs
-```
-
-> Para usar PostgreSQL, utilize `docker compose.dev.yml`: `docker compose -f docker-compose.dev.yml up --build`
-
-### Opcao 3: Kubernetes + Terraform
-
-```bash
-cd terraform
-terraform init
-terraform apply -auto-approve
-
-# Opcao A - Port-forward (recomendado para dev)
-kubectl port-forward -n oficina svc/oficina-api 8080:80
-# Acessar: http://localhost:8080/docs
-
-# Opcao B - NodePort (acesso direto)
-NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}')
-# Acessar: http://$NODE_IP:30080/docs
-```
-
-## Credenciais de Acesso
-
-- **Usuario**: admin
-- **Senha**: secret
-
-## APIs Disponiveis
-
-### APIs Administrativas (JWT obrigatorio)
-- `POST /api/v1/auth/login` - Login e obtencao do token JWT
-- `GET /api/v1/auth/me` - Informacoes do usuario logado
-- `POST/GET/PUT/DELETE /api/v1/clientes` - CRUD de clientes
-- `POST/GET/PUT/DELETE /api/v1/veiculos` - CRUD de veiculos
-- `POST/GET/PUT/DELETE /api/v1/servicos` - CRUD de servicos do catalogo
-- `POST/GET/PUT/PATCH/DELETE /api/v1/pecas` - CRUD de pecas + controle de estoque
-- `POST /api/v1/ordens-servico` - Abertura de OS
-- `GET /api/v1/ordens-servico` - Listagem de OS (ordenada por status + mais antigas primeiro; exclui finalizadas/entregues)
-- `GET /api/v1/ordens-servico/{id}` - Detalhamento de OS
-- `PATCH /api/v1/ordens-servico/{id}/status` - Atualizacao de status
-- `POST /api/v1/ordens-servico/{id}/orcamento/aprovar` - Aprovacao/recusa de orcamento (endpoint publico para notificacoes externas)
-
-### APIs Publicas (sem JWT)
-- `GET /health` - Health check da aplicacao
-- `GET /api/v1/public/ordens-servico/{id}/status` - Consulta publica do status da OS
-
-### Ordenacao de Listagem de OS
-
-A listagem de OS segue a seguinte ordem de prioridade:
-1. Em Execucao
-2. Aguardando Aprovacao
-3. Diagnostico
-4. Recebida
-
-Dentro de cada status, as OS mais antigas aparecem primeiro. OS finalizadas e entregues sao excluidas (soft-delete logico).
-
-## Testes
-
-```bash
-# Todos os testes
-poetry run pytest
-
-# Apenas testes unitarios
-poetry run pytest tests/unit/
-
-# Apenas testes de integracao
-poetry run pytest tests/integration/
-
-# Com cobertura
-poetry run pytest --cov=src --cov-report=html --cov-fail-under=80
-# Abrir htmlcov/index.html
-```
-
-### Cobertura minima: 80%
-
-## CI/CD
-
-### Pipeline de CI (`.github/workflows/pipeline.yml`)
-- Lint (Black + isort)
-- Testes automatizados com cobertura minima de 80%
-- Build da imagem Docker
-- Smoke test do container
-
-### Pipeline de CD (`.github/workflows/pipeline.yml` - job deploy)
-- Build e push da imagem para GitHub Container Registry
-- Provisionamento do cluster Kubernetes via Terraform (Kind)
-- Deploy do PostgreSQL (StatefulSet)
-- Deploy da aplicacao (Deployment + HPA)
-- Aplicacao dos manifestos YAML
-- Smoke test no cluster
-
-## Justificativa do Banco de Dados
-
-- **SQLite (dev)**: Leve, sem necessidade de servidor, ideal para desenvolvimento rapido e testes em memoria.
-- **PostgreSQL (prod)**: Robusto, ACID, com suporte a JSON, particionamento e replicacao. Ideal para o dominio de OS/estoque/clientes que exige integridade referencial e transacoes confiaveis.
-
-## Validacoes Implementadas
-
-- **CPF/CNPJ**: Validacao de digitos verificadores (modulo 11)
-- **Placa**: Suporte a formato Mercosul (AAA1A11) e antiga (AAA1111)
-- **Email**: Validacao de formato RFC
-- **Dinheiro**: Impede valores negativos, arredondamento de 2 casas
-- **Maquina de estados da OS**: Transicoes validadas (Recebida -> Diagnostico -> Aguardando Aprovacao -> Em Execucao -> Finalizada -> Entregue)
-
-## Licenca
-
-MIT
+- [Documentação da API Gateway](../shared-infra/docs/api-gateway-routes.md)

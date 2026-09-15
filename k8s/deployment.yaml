@@ -18,6 +18,7 @@ spec:
         app.kubernetes.io/name: oficina
         app.kubernetes.io/component: api
     spec:
+      serviceAccountName: oficina-api
       imagePullSecrets:
         - name: ghcr-secret
       containers:
@@ -32,6 +33,17 @@ spec:
                 name: oficina-config
             - secretRef:
                 name: oficina-secrets
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-secrets
+                  key: DATABASE_URL
+            - name: CPF_VALIDATOR_LAMBDA_ARN
+              valueFrom:
+                secretKeyRef:
+                  name: oficina-secrets
+                  key: CPF_VALIDATOR_LAMBDA_ARN
           resources:
             requests:
               cpu: "100m"
