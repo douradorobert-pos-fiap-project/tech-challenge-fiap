@@ -30,13 +30,28 @@ Infrastructure (adapters: DB, auth, email, Lambda)
 API (FastAPI routes - adapter de entrada)
 ```
 
+```mermaid
+flowchart LR
+    client[Cliente HTTP] --> gateway[API Gateway de shared-infra]
+    gateway -->|VPC Link e NLB| service[Service Kubernetes no EKS]
+    service --> api[Rotas FastAPI]
+    api --> usecases[Casos de uso e ports]
+    usecases --> domain[Entidades e regras de domínio]
+    usecases --> adapters[Adapters de infraestrutura]
+    adapters -->|SQLAlchemy/Alembic| rds[(RDS PostgreSQL de database-infra)]
+    adapters -->|Invocação AWS| cpf[Lambda CPF Validator]
+    adapters -->|JWT e email| external[Autenticação e SMTP]
+```
+
+O código de domínio não depende dos adapters. Este repositório contém a API, as regras de negócio, as migrations e os manifests da aplicação; os recursos AWS compartilhados são provisionados pelos outros repositórios.
+
 ## Execução Local
 
 ### Pré-requisitos
 
 - Python 3.12+
 - Poetry
-- Docker e docker-compose
+- Docker com Compose
 - AWS CLI (para deploy)
 
 ### Configuração
@@ -60,10 +75,17 @@ CPF_VALIDATOR_LAMBDA_ARN=arn:aws:lambda:us-east-1:SEU_ACCOUNT:function:CpfValida
 Para rodar localmente com docker-compose (banco local):
 
 ```bash
-docker-compose -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.dev.yml up --build
 ```
 
 A API estará disponível em `http://localhost:8000/docs`
+
+### Documentação da API
+
+- [Swagger UI da API local](http://localhost:8000/docs) — disponível após iniciar o Compose ou o Uvicorn.
+- [OpenAPI JSON da API local](http://localhost:8000/openapi.json) — especificação gerada pelo FastAPI.
+
+O API Gateway de produção tem endpoint variável por ambiente (`api_gateway_endpoint` em `shared-infra`). As rotas `/docs` e `/openapi.json` não estão configuradas no Gateway; para consultar o Swagger da instância implantada, acesse a API pela rede do cluster, por exemplo com `kubectl port-forward -n oficina service/oficina-api 8000:80`, e abra os links locais acima. Não há coleção Postman versionada neste repositório.
 
 ### Testes
 
