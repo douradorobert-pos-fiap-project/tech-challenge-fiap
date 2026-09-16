@@ -13,9 +13,14 @@ def record_event(event_type: str, **attributes: object) -> None:
     if correlation_id := get_correlation_id():
         attributes["correlation_id"] = correlation_id
     try:
-        newrelic.agent.record_custom_event(event_type, attributes)
+        application = newrelic.agent.application()
+        newrelic.agent.record_custom_event(
+            event_type,
+            attributes,
+            application=application,
+        )
     except Exception:
-        logger.debug("Unable to record New Relic custom event", exc_info=True)
+        logger.exception("Unable to record New Relic custom event")
 
 
 def record_integration_error(
