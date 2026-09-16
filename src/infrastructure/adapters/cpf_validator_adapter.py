@@ -5,6 +5,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from src.infrastructure.config.settings import settings
+from src.infrastructure.observability.telemetry import record_integration_error
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,7 @@ class CpfValidatorAdapter:
 
         except ClientError as e:
             logger.error(f"Failed to invoke CPF validator Lambda: {e}")
+            record_integration_error("cpf_validator_lambda", "validate_cpf", e)
             # In case of error, fall back to local validation for resilience
             # Or could raise an exception depending on requirements
             from src.domain.value_objects.cpf_cnpj import CpfCnpj
@@ -73,6 +75,7 @@ class CpfValidatorAdapter:
                 return False
         except Exception as e:
             logger.error(f"Unexpected error in CPF validation: {e}")
+            record_integration_error("cpf_validator_lambda", "validate_cpf", e)
             # Fall back to local validation
             from src.domain.value_objects.cpf_cnpj import CpfCnpj
 

@@ -169,6 +169,7 @@ jobs:
             --from-literal=JWT_SECRET="${JWT_SECRET}" \
             --from-literal=DATABASE_URL="${DATABASE_URL}" \
             --from-literal=CPF_VALIDATOR_LAMBDA_ARN="${LAMBDA_ARN}" \
+            --from-literal=NEW_RELIC_LICENSE_KEY="${{ secrets.NEW_RELIC_LICENSE_KEY }}" \
             --from-literal=SMTP_USER="${{ secrets.SMTP_USER }}" \
             --from-literal=SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}" \
             --dry-run=client -o yaml | kubectl apply -f -
@@ -224,6 +225,11 @@ jobs:
           kubectl apply -f k8s/service-account.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/deployment.yaml
+          # Jobs têm spec.template imutável; recria a migração com a imagem atual.
+          kubectl delete job alembic-migrations \
+            --namespace oficina \
+            --ignore-not-found=true \
+            --wait=true
           kubectl apply -f k8s/migration-job.yaml
           for i in $(seq 1 360); do
             COMPLETE=$(kubectl get job alembic-migrations -n oficina -o jsonpath="{.status.conditions[?(@.type==\"Complete\")].status}" 2>/dev/null || true)

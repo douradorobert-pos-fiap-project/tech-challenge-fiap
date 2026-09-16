@@ -26,6 +26,7 @@ from src.domain.exceptions.domain_exceptions import (
     VeiculoNaoEncontradoError,
 )
 from src.domain.services.calculo_orcamento import CalculoOrcamentoService
+from src.infrastructure.observability.telemetry import record_event
 
 
 class AbrirOsUseCase:
@@ -84,6 +85,9 @@ class AbrirOsUseCase:
         ordem.aguardar_aprovacao()
 
         saved = self._os_repository.save(ordem)
+        record_event(
+            "ServiceOrderCreated", order_id=str(saved.id), status=saved.status.name
+        )
         return self._to_response(saved)
 
     @staticmethod

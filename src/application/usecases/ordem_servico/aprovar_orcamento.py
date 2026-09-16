@@ -9,6 +9,7 @@ from src.application.ports.repositories.ordem_servico_repository_port import (
 )
 from src.application.usecases.ordem_servico.abrir_os import AbrirOsUseCase
 from src.domain.exceptions.domain_exceptions import OrdemServicoNaoEncontradaError
+from src.infrastructure.observability.telemetry import record_event
 
 
 class AprovarOrcamentoUseCase:
@@ -31,4 +32,10 @@ class AprovarOrcamentoUseCase:
             raise ValueError(f"Acao invalida: {dto.acao}. Use APROVAR ou RECUSAR.")
 
         saved = self._repository.save(ordem)
+        record_event(
+            "ServiceOrderStatusChanged",
+            order_id=str(saved.id),
+            previous_status="AGUARDANDO_APROVACAO",
+            new_status=saved.status.name,
+        )
         return AbrirOsUseCase._to_response(saved)
