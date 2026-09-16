@@ -21,6 +21,7 @@ email-validator = ">=2.0.0,<3.0.0"
 psycopg2-binary = ">=2.9.0,<3.0.0"
 python-multipart = "^0.0.32"
 boto3 = ">=1.35.0,<1.36.0"
+newrelic = ">=10.0.0,<11.0.0"
 
 [tool.poetry]
 package-mode = false

@@ -169,6 +169,7 @@ jobs:
             --from-literal=JWT_SECRET="${JWT_SECRET}" \
             --from-literal=DATABASE_URL="${DATABASE_URL}" \
             --from-literal=CPF_VALIDATOR_LAMBDA_ARN="${LAMBDA_ARN}" \
+            --from-literal=NEW_RELIC_LICENSE_KEY="${{ secrets.NEW_RELIC_LICENSE_KEY }}" \
             --from-literal=SMTP_USER="${{ secrets.SMTP_USER }}" \
             --from-literal=SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}" \
             --dry-run=client -o yaml | kubectl apply -f -

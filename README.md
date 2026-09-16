@@ -203,3 +203,87 @@ O pipeline lê os outputs dos estados do Terraform salvos no S3:
 ## Documentação Adicional
 
 - [Documentação da API Gateway](../shared-infra/docs/api-gateway-routes.md)
+
+
+## Monitoring and Observability
+
+A aplicacao usa o agente oficial New Relic para Python, com auto-instrumentacao de FastAPI/Uvicorn, SQLAlchemy e chamadas suportadas. O agente e inicializado somente quando `NEW_RELIC_LICENSE_KEY` existe; sem ela, a aplicacao e os testes funcionam normalmente. Distributed tracing fica habilitado por `NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true`.
+
+Variaveis de ambiente:
+
+- `NEW_RELIC_LICENSE_KEY`: Secret do New Relic; nunca inclua seu valor no codigo, imagem, manifests versionados ou testes.
+- `NEW_RELIC_APP_NAME`: nome exibido no APM (no Kubernetes: `oficina-api`).
+- `NEW_RELIC_ENVIRONMENT`: ambiente do agente (no Kubernetes: `production`).
+- `NEW_RELIC_DISTRIBUTED_TRACING_ENABLED`: habilita tracing distribuido.
+
+O pipeline adiciona `NEW_RELIC_LICENSE_KEY` ao Secret Kubernetes `oficina-secrets`, usando o GitHub Actions Secret de mesmo nome. Nao e necessario Helm ou agente adicional de coleta de logs.
+
+### Logs, correlation ID e healthchecks
+
+Logs sao JSON em stdout, com `timestamp`, `level`, `message`, `service`, `environment`, `correlation_id` e, para requests, `request_method`, `request_path`, `status_code` e `duration_ms`. JWT, Authorization, senhas, secrets e payloads de CPF nao sao registrados.
+
+Cada request reutiliza `X-Correlation-ID` recebido (limitado a 128 caracteres) ou gera UUID; o mesmo valor e retornado em `X-Correlation-ID`. Nao ha cliente HTTP proprio na aplicacao para propagar o header. O agente New Relic propaga contexto de tracing automaticamente em bibliotecas suportadas.
+
+`/health` e o healthcheck existente e e usado por liveness, readiness e startup probes. A liveness nao depende do banco ou da Lambda.
+
+Validacao local:
+
+```bash
+NEW_RELIC_APP_NAME=oficina-api NEW_RELIC_ENVIRONMENT=development \
+  uvicorn src.api.main:app --reload
+curl -i http://localhost:8000/health
+curl -i -H 'X-Correlation-ID: local-check-123' http://localhost:8000/health
+```
+
+Depois do deploy, confirme o rollout e consulte logs:
+
+```bash
+kubectl rollout status deployment/oficina-api -n oficina
+kubectl logs -n oficina deployment/oficina-api
+kubectl logs -n oficina deployment/oficina-api | grep '"correlation_id":"local-check-123"'
+```
+
+No New Relic, abra APM & Services e selecione `oficina-api`; use Distributed tracing para requests e chamadas externas. Os eventos customizados sao `ServiceOrderCreated`, `ServiceOrderStatusChanged`, `ServiceOrderStatusDuration` e `IntegrationError`.
+
+### NRQL para dashboards
+
+As consultas abaixo usam exatamente os eventos emitidos pela aplicacao:
+
+```sql
+-- Latencia, throughput e taxa de erros HTTP (APM)
+SELECT average(duration), percentile(duration, 95)
+FROM Transaction
+WHERE appName = 'oficina-api'
+TIMESERIES
+
+SELECT rate(count(*), 1 minute)
+FROM Transaction
+WHERE appName = 'oficina-api'
+TIMESERIES
+
+SELECT percentage(count(*), WHERE error IS TRUE)
+FROM Transaction
+WHERE appName = 'oficina-api'
+TIMESERIES
+
+-- Volume diario de OS
+SELECT count(*)
+FROM ServiceOrderCreated
+FACET status
+TIMESERIES 1 day
+
+-- Tempo emitido ao sair dos status relevantes
+SELECT average(duration_ms)
+FROM ServiceOrderStatusDuration
+WHERE status IN ('DIAGNOSTICO', 'EM_EXECUCAO', 'FINALIZADA')
+FACET status
+TIMESERIES
+
+-- Falhas das integracoes
+SELECT count(*)
+FROM IntegrationError
+FACET integration, operation, error_type
+TIMESERIES
+```
+
+O evento de duracao e emitido na transicao de saida e usa `atualizada_em` como inicio. O modelo atual nao possui historico de status; portanto, nao e possivel reconstruir retrospectivamente tempos por status nem medir corretamente o primeiro status criado quando nao houve intervalo observavel. Uma tabela de historico seria necessaria para essa precisao, mas nao foi introduzida para manter a mudanca incremental.

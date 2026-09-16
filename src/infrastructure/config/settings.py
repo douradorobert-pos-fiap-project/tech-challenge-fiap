@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "Sistema de Oficina"
     APP_VERSION: str = "1.0.0"
     APP_ENV: str = "development"
+    NEW_RELIC_LICENSE_KEY: str = ""
+    NEW_RELIC_APP_NAME: str = ""
+    NEW_RELIC_ENVIRONMENT: str = ""
 
     DATABASE_URL: str = "sqlite:///./data/oficina.db"
     CPF_VALIDATOR_LAMBDA_ARN: str = ""
