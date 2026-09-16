@@ -20,16 +20,6 @@ Sistema back-end para gestao de ordens de servico, clientes e pecas de oficina m
 
 ## Arquitetura Hexagonal (Ports & Adapters)
 
-```
-Domain (puro, sem deps técnicas)
-  ↓
-Application (use cases + ports)
-  ↓
-Infrastructure (adapters: DB, auth, email, Lambda)
-  ↓
-API (FastAPI routes - adapter de entrada)
-```
-
 ```mermaid
 flowchart LR
     client[Cliente HTTP] --> gateway[API Gateway de shared-infra]
@@ -72,7 +62,7 @@ CPF_VALIDATOR_LAMBDA_ARN=arn:aws:lambda:us-east-1:SEU_ACCOUNT:function:CpfValida
 
 ### Desenvolvimento
 
-Para rodar localmente com docker-compose (banco local):
+Para rodar localmente com Docker Compose e banco local:
 
 ```bash
 docker compose -f docker-compose.dev.yml up --build
@@ -224,7 +214,7 @@ O pipeline lê os outputs dos estados do Terraform salvos no S3:
 
 ## Documentação Adicional
 
-- [Documentação da API Gateway](../shared-infra/docs/api-gateway-routes.md)
+- [Documentação da API Gateway](https://github.com/douradorobert-pos-fiap-project/shared-infra/blob/main/docs/api-gateway-routes.md)
 
 
 ## Monitoring and Observability
